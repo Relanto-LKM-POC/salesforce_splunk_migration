@@ -1,0 +1,1 @@
+// minimal main() which will call cmd.Execute()

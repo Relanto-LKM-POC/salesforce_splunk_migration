@@ -1,0 +1,1041 @@
+# Product Requirements Document: Salesforce to Splunk Dashboard Migration Automation
+
+## 1. Executive Summary
+
+### 1.1 Project Overview
+Create a standalone Golang application that automates the Salesforce to Splunk data migration through programmatic REST API integration. The manual steps in the process will be: (1) installation of the Splunk Add-on for Salesforce app, and (2) creation of Splunk dashboard XML files. The application will then use these dashboard XMLs to automate dashboard deployment via a pipeline.
+
+### 1.2 Business Objectives
+- Eliminate manual configuration steps for Salesforce-to-Splunk integration
+- Reduce migration time from hours to minutes
+- Ensure consistency and repeatability across environments
+- Provide a scalable solution for enterprise dashboard migration
+- Enable infrastructure-as-code approach for Salesforce-Splunk integrations
+
+### 1.3 Success Criteria
+- Successfully authenticate with Splunk REST API
+- Programmatically create Splunk indexes, accounts, and data inputs
+- Deploy manually created Splunk dashboards via automated pipeline
+- Validate and verify deployed dashboards in Splunk
+- Complete configuration and dashboard deployment with minimal user intervention
+- Provide detailed logging and error handling throughout the process
+
+## 2. Project Scope
+
+### 2.1 In Scope
+- Golang standalone CLI application
+- Splunk REST API integration for configuration management
+- Automated Splunk index creation
+- Automated Salesforce account configuration in Splunk
+- Automated data input creation for Salesforce objects
+- Dashboard deployment pipeline using pre-created Splunk XML files
+- Dashboard validation and verification
+- Configuration management via JSON/YAML files
+- Comprehensive logging and error handling
+- Environment variable management for credentials
+- Support for multiple Salesforce environments (production, sandbox, UAT)
+- Support for standard and custom Salesforce objects
+- Retry logic and rate limiting for API calls
+
+### 2.2 Out of Scope
+- Manual installation of Splunk Add-on for Salesforce (prerequisite)
+- Manual creation of Splunk dashboard XML files (prerequisite)
+- Automatic conversion from Salesforce dashboards to Splunk format
+- Salesforce REST API integration for dashboard discovery
+- Salesforce data model modifications
+- Custom Splunk app development beyond dashboards
+- Real-time streaming data integration
+- OAuth 2.0 authentication flows (using basic auth as per working examples)
+- GUI interface (CLI only)
+
+### 2.3 Assumptions
+- Splunk Add-on for Salesforce is pre-installed
+- Splunk dashboard XML files are manually created and stored in a designated directory
+- Dashboard XML files follow Splunk SimpleXML format standards
+- Splunk REST API access is available (port 8089)
+- Salesforce API access is enabled for the integration user
+- Network connectivity between Golang app, Splunk, and Salesforce
+- Credentials are provided via environment variables or credentials file
+- User has appropriate permissions in both Salesforce and Splunk
+
+## 3. Technical Architecture
+
+### 3.1 Technology Stack
+- **Language**: Go 1.21+
+- **HTTP Client**: net/http with custom retry logic
+- **Configuration**: Viper (for config file management)
+- **Logging**: Zap (structured logging)
+- **CLI Framework**: Cobra (for command structure)
+- **Testing**: Go standard testing + testify
+- **API Clients**: Custom REST clients for Salesforce and Splunk
+
+### 3.2 Project Structure
+```
+salesforce-splunk-migration/
+├── cmd/
+│   └── api/
+│       └── main.go                 # CLI entry point
+├── internal/
+│   ├── config/
+│   │   ├── config.go              # Configuration management
+│   │   └── env.go                 # Environment variable handling
+│   ├── salesforce/
+│   │   ├── client.go              # Salesforce API client
+│   │   ├── auth.go                # Salesforce authentication
+│   │   ├── dashboard.go           # Dashboard operations
+│   │   └── objects.go             # Object metadata operations
+│   ├── splunk/
+│   │   ├── client.go              # Splunk API client
+│   │   ├── auth.go                # Splunk authentication
+│   │   ├── index.go               # Index management
+│   │   ├── account.go             # Account configuration
+│   │   ├── input.go               # Data input management
+│   │   └── dashboard.go           # Dashboard creation
+│   ├── mapper/
+│   │   ├── dashboard.go           # Dashboard schema mapping
+│   │   ├── visualization.go       # Visualization conversion
+│   │   └── query.go               # Query translation
+│   └── utils/
+│       ├── logger.go              # Logging utilities
+│       ├── retry.go               # Retry logic
+│       └── validator.go           # Input validation
+├── pkg/
+│   └── models/
+│       ├── salesforce.go          # Salesforce data models
+│       ├── splunk.go              # Splunk data models
+│       └── config.go              # Configuration models
+├── configs/
+│   ├── config.yaml                # Default configuration
+│   ├── objects.yaml               # Salesforce object definitions
+│   └── mappings.yaml              # Dashboard mapping rules
+├── scripts/
+│   ├── setup.sh                   # Setup script
+│   └── test.sh                    # Test script
+├── docs/
+│   ├── API.md                     # API documentation
+│   ├── USAGE.md                   # Usage guide
+│   └── TROUBLESHOOTING.md         # Troubleshooting guide
+├── .env.example                    # Example environment variables
+├── go.mod
+├── go.sum
+├── Makefile
+└── README.md
+```
+
+### 3.3 Environment Variables
+Based on the working curl examples and migration guide, the following environment variables are required:
+
+```bash
+# Splunk Configuration
+SPLUNK_URL=https://localhost:8089
+SPLUNK_USERNAME=admin
+SPLUNK_PASSWORD=your_password
+SPLUNK_AUTH_TOKEN=your_auth_token
+
+# Salesforce Configuration
+SALESFORCE_ENDPOINT=login.salesforce.com
+SALESFORCE_USERNAME=your_user@company.com
+SALESFORCE_PASSWORD=your_password
+SALESFORCE_SECURITY_TOKEN=your_security_token
+SALESFORCE_API_VERSION=64.0
+
+# Application Configuration
+LOG_LEVEL=info
+MAX_RETRIES=3
+RETRY_DELAY=5
+REQUEST_TIMEOUT=30
+DEFAULT_INDEX=salesforce
+```
+
+## 4. Functional Requirements
+
+### 4.1 Configuration Management (FR-001)
+**Priority**: High
+**Description**: Load and validate configuration from files and environment variables
+
+**Requirements**:
+- FR-001.1: Load configuration from YAML/JSON files
+- FR-001.2: Override config values with environment variables
+- FR-001.3: Validate all required credentials are present
+- FR-001.4: Support multiple environment profiles (dev, uat, prod)
+- FR-001.5: Secure handling of sensitive credentials
+- FR-001.6: Provide clear error messages for missing/invalid config
+
+**Acceptance Criteria**:
+- Configuration loads successfully from file
+- Environment variables override file values
+- Application fails fast with clear error if credentials missing
+- Support for .env files in development
+
+### 4.2 Splunk Authentication (FR-002)
+**Priority**: High
+**Description**: Authenticate with Splunk REST API using token or basic auth
+
+**Requirements**:
+- FR-002.1: Support authentication token method (preferred)
+- FR-002.2: Support basic authentication (username/password)
+- FR-002.3: Generate new auth token if needed
+- FR-002.4: Validate token/credentials before proceeding
+- FR-002.5: Handle SSL certificate verification (-k flag equivalent)
+- FR-002.6: Store token for reuse during session
+
+**Acceptance Criteria**:
+- Successfully authenticate with Splunk REST API
+- Token generation works when needed
+- Invalid credentials result in clear error message
+- SSL verification can be disabled for self-signed certificates
+
+**API Reference** (from working_curl.md):
+```bash
+curl -k -H "Authorization: Splunk <TOKEN>" \
+  -X POST "https://localhost:8089/servicesNS/..."
+```
+
+### 4.3 Salesforce Authentication (FR-003)
+**Priority**: High
+**Description**: Authenticate with Salesforce REST API using basic authentication
+
+**Requirements**:
+- FR-003.1: Authenticate using username/password/security token
+- FR-003.2: Support both production and sandbox endpoints
+- FR-003.3: Obtain and store session ID/access token
+- FR-003.4: Handle token expiration and refresh
+- FR-003.5: Validate API version compatibility
+- FR-003.6: Test API access after authentication
+
+**Acceptance Criteria**:
+- Successfully authenticate with Salesforce API
+- Session token obtained and stored
+- Works with both login.salesforce.com and test.salesforce.com
+- API version validation succeeds
+
+### 4.4 Splunk Index Management (FR-004)
+**Priority**: High
+**Description**: Create and configure Splunk indexes for Salesforce data
+
+**Requirements**:
+- FR-004.1: Create indexes programmatically via REST API
+- FR-004.2: Support custom index names (e.g., salesforce, salesforce_production)
+- FR-004.3: Configure index properties (size, retention, paths)
+- FR-004.4: Verify index creation success
+- FR-004.5: Handle existing index scenarios (skip or update)
+- FR-004.6: Support multiple indexes for different environments
+
+**Acceptance Criteria**:
+- Indexes created successfully via REST API
+- Index properties configured as specified
+- Existing indexes detected and handled appropriately
+- Clear logging of index operations
+
+**API Reference**:
+```bash
+curl -k -X POST \
+  "${SPLUNK_URL}/services/data/indexes" \
+  -H "Authorization: Splunk ${TOKEN}" \
+  -d "name=salesforce" \
+  -d "datatype=event" \
+  -d "maxTotalDataSizeMB=500000"
+```
+
+### 4.5 Salesforce Account Configuration (FR-005)
+**Priority**: High
+**Description**: Configure Salesforce account in Splunk Add-on
+
+**Requirements**:
+- FR-005.1: Create Salesforce account via REST API
+- FR-005.2: Configure basic authentication parameters
+- FR-005.3: Set endpoint (production/sandbox)
+- FR-005.4: Configure API version
+- FR-005.5: Validate account creation success
+- FR-005.6: Support multiple account configurations
+
+**Acceptance Criteria**:
+- Account created successfully via REST API
+- Authentication parameters properly configured
+- Account accessible from Splunk Add-on
+- Clear error messages for failures
+
+**API Reference** (from working_curl.md):
+```bash
+curl -k -H "Authorization: Splunk ${TOKEN}" \
+  -X POST "https://localhost:8089/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_account?output_mode=json" \
+  -d "name=salesforce_UAT_curl" \
+  -d "endpoint=login.salesforce.com" \
+  -d "sfdc_api_version=64.0" \
+  -d "auth_type=basic" \
+  -d "username=user@company.com" \
+  -d "password=password" \
+  -d "token=security_token"
+```
+
+### 4.6 Salesforce Data Input Creation (FR-006)
+**Priority**: High
+**Description**: Create data inputs for Salesforce objects
+
+**Requirements**:
+- FR-006.1: Create object inputs via REST API
+- FR-006.2: Support standard objects (Account, Contact, Opportunity, etc.)
+- FR-006.3: Support custom objects (with __c suffix)
+- FR-006.4: Configure object fields to collect
+- FR-006.5: Set collection interval and delay
+- FR-006.6: Configure start date for data collection
+- FR-006.7: Assign to appropriate index
+- FR-006.8: Handle existing inputs (update or skip)
+
+**Acceptance Criteria**:
+- Data inputs created successfully for configured objects
+- Fields properly specified and collected
+- Collection schedule configured correctly
+- Data flowing into Splunk index
+
+**API Reference** (from working_curl.md):
+```bash
+curl -k -H "Authorization: Splunk ${TOKEN}" \
+  -X POST "https://localhost:8089/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object?output_mode=json" \
+  -d "name=my_salesforce_input_testing_curl" \
+  -d "account=salesforce_UAT_curl" \
+  -d "object=Account" \
+  -d "object_fields=Id,Name,CreatedDate,LastModifiedDate" \
+  -d "order_by=LastModifiedDate" \
+  -d "start_date=2024-01-01T00:00:00.000Z" \
+  -d "interval=300" \
+  -d "delay=60" \
+  -d "index=default"
+```
+
+### 4.7 Salesforce Dashboard Discovery (FR-007)
+**Priority**: High
+**Description**: Discover and retrieve Salesforce dashboard metadata
+
+**Requirements**:
+- FR-007.1: Query Salesforce for available dashboards
+- FR-007.2: Retrieve dashboard metadata and structure
+- FR-007.3: Extract dashboard components and visualizations
+- FR-007.4: Identify data sources for each component
+- FR-007.5: Download dashboard definitions
+- FR-007.6: Support filtering dashboards by criteria
+
+**Acceptance Criteria**:
+- All Salesforce dashboards discovered
+- Dashboard metadata retrieved completely
+- Components and visualizations identified
+- Data sources mapped correctly
+
+**Salesforce API Endpoints** (to be researched):
+- `/services/data/v64.0/analytics/dashboards`
+- `/services/data/v64.0/wave/dashboards`
+
+### 4.8 Dashboard Schema Mapping (FR-008)
+**Priority**: High
+**Description**: Map Salesforce dashboard schema to Splunk dashboard format
+
+**Requirements**:
+- FR-008.1: Parse Salesforce dashboard JSON structure
+- FR-008.2: Map dashboard properties to Splunk SimpleXML
+- FR-008.3: Convert visualization types (chart, table, gauge, etc.)
+- FR-008.4: Transform queries to SPL (Splunk Processing Language)
+- FR-008.5: Map colors, labels, and styling
+- FR-008.6: Handle unsupported features gracefully
+- FR-008.7: Generate valid Splunk dashboard XML
+
+**Acceptance Criteria**:
+- Salesforce dashboards successfully parsed
+- Valid Splunk SimpleXML generated
+- Visualization types correctly converted
+- Queries transformed to SPL format
+- Dashboard renders correctly in Splunk
+
+### 4.9 Splunk Dashboard Creation (FR-009)
+**Priority**: High
+**Description**: Create dashboards in Splunk via REST API
+
+**Requirements**:
+- FR-009.1: Create dashboard via REST API
+- FR-009.2: Upload dashboard XML definition
+- FR-009.3: Configure dashboard permissions
+- FR-009.4: Set dashboard properties (title, description)
+- FR-009.5: Verify dashboard creation success
+- FR-009.6: Handle existing dashboard scenarios
+- FR-009.7: Support dashboard updates
+
+**Acceptance Criteria**:
+- Dashboards created successfully in Splunk
+- Dashboard XML properly formatted
+- Dashboards accessible in Splunk UI
+- Permissions configured correctly
+
+**API Reference** (to be implemented):
+```bash
+curl -k -H "Authorization: Splunk ${TOKEN}" \
+  -X POST "https://localhost:8089/servicesNS/admin/search/data/ui/views" \
+  -d "name=salesforce_dashboard" \
+  -d "eai:data=<dashboard_xml>"
+```
+
+### 4.10 Object Metadata Synchronization (FR-010)
+**Priority**: Medium
+**Description**: Synchronize Salesforce object metadata for accurate field mapping
+
+**Requirements**:
+- FR-010.1: Retrieve object describe information from Salesforce
+- FR-010.2: Extract field names, types, and labels
+- FR-010.3: Identify required vs optional fields
+- FR-010.4: Detect custom fields (with __c suffix)
+- FR-010.5: Cache metadata for performance
+- FR-010.6: Support metadata refresh on demand
+
+**Acceptance Criteria**:
+- Object metadata retrieved successfully
+- Field information accurate and complete
+- Custom fields properly identified
+- Metadata cached for reuse
+
+### 4.11 Error Handling and Retry Logic (FR-011)
+**Priority**: High
+**Description**: Implement robust error handling and retry mechanisms
+
+**Requirements**:
+- FR-011.1: Retry failed API calls with exponential backoff
+- FR-011.2: Handle rate limiting (429 errors)
+- FR-011.3: Log all errors with context
+- FR-011.4: Provide meaningful error messages
+- FR-011.5: Support graceful degradation
+- FR-011.6: Track and report failed operations
+- FR-011.7: Support resume from failure point
+
+**Acceptance Criteria**:
+- Transient errors automatically retried
+- Rate limiting handled gracefully
+- Errors logged with full context
+- User receives actionable error messages
+- Failed operations can be resumed
+
+### 4.12 Logging and Monitoring (FR-012)
+**Priority**: Medium
+**Description**: Comprehensive logging for operations and debugging
+
+**Requirements**:
+- FR-012.1: Structured logging (JSON format)
+- FR-012.2: Configurable log levels (debug, info, warn, error)
+- FR-012.3: Log API requests and responses (sanitized)
+- FR-012.4: Track operation progress
+- FR-012.5: Performance metrics (timing, counts)
+- FR-012.6: Log rotation and management
+
+**Acceptance Criteria**:
+- Logs provide clear operation visibility
+- Debug information available when needed
+- Sensitive data not logged
+- Performance metrics tracked
+- Logs suitable for production monitoring
+
+### 4.13 CLI Interface (FR-013)
+**Priority**: Medium
+**Description**: User-friendly command-line interface
+
+**Requirements**:
+- FR-013.1: Main migration command
+- FR-013.2: Subcommands for specific operations
+- FR-013.3: Flag-based configuration
+- FR-013.4: Interactive mode for confirmations
+- FR-013.5: Progress indicators
+- FR-013.6: Help and usage information
+- FR-013.7: Version information
+
+**Commands**:
+```bash
+# Main migration
+./migrate run --config config.yaml
+
+# Specific operations
+./migrate configure-account --name prod
+./migrate create-inputs --object Account,Contact
+./migrate discover-dashboards
+./migrate migrate-dashboard --id 12345
+
+# Utilities
+./migrate validate-config
+./migrate test-connection --service splunk
+./migrate version
+```
+
+**Acceptance Criteria**:
+- CLI intuitive and easy to use
+- Help documentation clear
+- Commands work as documented
+- Error messages actionable
+
+### 4.14 Validation and Pre-flight Checks (FR-014)
+**Priority**: Medium
+**Description**: Validate configuration and connectivity before migration
+
+**Requirements**:
+- FR-014.1: Validate configuration file syntax
+- FR-014.2: Test Splunk connectivity
+- FR-014.3: Test Salesforce connectivity
+- FR-014.4: Verify Splunk Add-on installation
+- FR-014.5: Check required permissions
+- FR-014.6: Validate object configurations
+- FR-014.7: Generate validation report
+
+**Acceptance Criteria**:
+- All validations run successfully
+- Connectivity issues detected early
+- Configuration errors reported clearly
+- Validation report actionable
+
+## 5. Non-Functional Requirements
+
+### 5.1 Performance (NFR-001)
+- Complete dashboard migration in < 5 minutes for 10 dashboards
+- Handle rate limiting gracefully (max 100 API calls/minute)
+- Support concurrent API calls where possible
+- Memory usage < 500MB during operation
+- Minimal CPU usage during API waits
+
+### 5.2 Reliability (NFR-002)
+- Automatic retry for transient failures
+- Resume capability after interruption
+- Data integrity validation
+- Idempotent operations (safe to re-run)
+- No data loss during migration
+
+### 5.3 Security (NFR-003)
+- Credentials never logged or displayed
+- Support for credential files with restricted permissions
+- SSL/TLS for all API communications
+- No hardcoded credentials in code
+- Secure storage of auth tokens in memory only
+
+### 5.4 Maintainability (NFR-004)
+- Clean, documented Go code
+- Unit tests for core functionality (>70% coverage)
+- Integration tests for API interactions
+- Clear error messages and logging
+- Modular architecture for easy updates
+
+### 5.5 Usability (NFR-005)
+- Simple CLI with minimal required flags
+- Clear progress indicators
+- Helpful error messages with suggestions
+- Comprehensive documentation
+- Example configurations provided
+
+### 5.6 Scalability (NFR-006)
+- Support 100+ dashboards per migration
+- Handle 50+ Salesforce objects
+- Support multiple environments simultaneously
+- Efficient API usage (batching where possible)
+
+## 6. Data Models
+
+### 6.1 Configuration Schema
+```yaml
+# config.yaml
+splunk:
+  url: "https://localhost:8089"
+  username: "admin"
+  skip_ssl_verify: true
+  default_index: "salesforce"
+
+salesforce:
+  endpoint: "login.salesforce.com"
+  api_version: "64.0"
+  auth_type: "basic"
+
+accounts:
+  - name: "salesforce_production"
+    environment: "production"
+    endpoint: "login.salesforce.com"
+  - name: "salesforce_uat"
+    environment: "sandbox"
+    endpoint: "test.salesforce.com"
+
+indexes:
+  - name: "salesforce"
+    max_size_mb: 500000
+    retention_days: 2190
+  - name: "salesforce_uat"
+    max_size_mb: 100000
+    retention_days: 90
+
+objects:
+  - name: "Account"
+    fields:
+      - "Id"
+      - "Name"
+      - "Type"
+      - "Industry"
+      - "CreatedDate"
+      - "LastModifiedDate"
+    order_by: "LastModifiedDate"
+    start_date: "2024-01-01T00:00:00.000Z"
+    interval: 300
+    delay: 60
+    index: "salesforce"
+
+  - name: "Contact"
+    fields:
+      - "Id"
+      - "FirstName"
+      - "LastName"
+      - "Email"
+      - "AccountId"
+      - "CreatedDate"
+      - "LastModifiedDate"
+    order_by: "LastModifiedDate"
+    start_date: "2024-01-01T00:00:00.000Z"
+    interval: 300
+    delay: 60
+    index: "salesforce"
+
+dashboards:
+  auto_discover: true
+  include_patterns:
+    - "Sales*"
+    - "Service*"
+  exclude_patterns:
+    - "*Test*"
+    - "*Draft*"
+
+migration:
+  max_retries: 3
+  retry_delay: 5
+  request_timeout: 30
+  concurrent_requests: 3
+```
+
+### 6.2 Salesforce Dashboard Model
+```go
+type SalesforceDashboard struct {
+    ID          string                 `json:"id"`
+    Name        string                 `json:"name"`
+    Description string                 `json:"description"`
+    CreatedBy   string                 `json:"createdBy"`
+    CreatedDate time.Time              `json:"createdDate"`
+    Components  []DashboardComponent   `json:"components"`
+    Layout      DashboardLayout        `json:"layout"`
+    Metadata    map[string]interface{} `json:"metadata"`
+}
+
+type DashboardComponent struct {
+    ID             string                 `json:"id"`
+    Type           string                 `json:"type"` // chart, table, metric, etc.
+    Title          string                 `json:"title"`
+    Query          string                 `json:"query"`
+    DataSource     string                 `json:"dataSource"`
+    Visualization  VisualizationConfig    `json:"visualization"`
+    Position       ComponentPosition      `json:"position"`
+    Properties     map[string]interface{} `json:"properties"`
+}
+```
+
+### 6.3 Splunk Dashboard Model
+```go
+type SplunkDashboard struct {
+    Title       string            `xml:"title"`
+    Description string            `xml:"description"`
+    Rows        []DashboardRow    `xml:"row"`
+    Metadata    DashboardMetadata `xml:"metadata"`
+}
+
+type DashboardRow struct {
+    Panels []DashboardPanel `xml:"panel"`
+}
+
+type DashboardPanel struct {
+    Title  string      `xml:"title"`
+    Chart  *ChartPanel `xml:"chart,omitempty"`
+    Table  *TablePanel `xml:"table,omitempty"`
+    Single *SinglePanel `xml:"single,omitempty"`
+    Search PanelSearch `xml:"search"`
+}
+```
+
+## 7. API Integration Details
+
+### 7.1 Splunk REST API Endpoints
+
+**Authentication:**
+- `POST /services/auth/login` - Basic authentication
+- `POST /services/authorization/tokens` - Generate token
+
+**Index Management:**
+- `POST /services/data/indexes` - Create index
+- `GET /services/data/indexes/{name}` - Get index details
+- `POST /services/data/indexes/{name}` - Update index
+
+**Account Configuration:**
+- `POST /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_account` - Create account
+- `GET /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_account/{name}` - Get account
+- `POST /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_account/{name}` - Update account
+
+**Data Input Management:**
+- `POST /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object` - Create input
+- `GET /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object` - List inputs
+- `POST /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object/{name}` - Update input
+
+**Dashboard Management:**
+- `POST /servicesNS/admin/search/data/ui/views` - Create dashboard
+- `GET /servicesNS/admin/search/data/ui/views/{name}` - Get dashboard
+- `POST /servicesNS/admin/search/data/ui/views/{name}` - Update dashboard
+
+### 7.2 Salesforce REST API Endpoints
+
+**Authentication:**
+- `POST /services/oauth2/token` - OAuth authentication
+- Basic auth: username + password + security token
+
+**Dashboard Discovery:**
+- `GET /services/data/v64.0/analytics/dashboards` - List dashboards
+- `GET /services/data/v64.0/analytics/dashboards/{id}` - Get dashboard details
+- `GET /services/data/v64.0/wave/dashboards` - Wave analytics dashboards
+
+**Object Metadata:**
+- `GET /services/data/v64.0/sobjects/{object}/describe` - Object metadata
+- `GET /services/data/v64.0/sobjects` - List all objects
+
+**Query Execution:**
+- `GET /services/data/v64.0/query?q={SOQL}` - Execute SOQL query
+
+## 8. Migration Workflow
+
+### 8.1 High-Level Flow
+```
+1. Load and validate configuration
+2. Authenticate with Splunk and Salesforce
+3. Pre-flight checks
+4. Create Splunk indexes
+5. Configure Salesforce accounts in Splunk
+6. Create data inputs for Salesforce objects
+7. Wait for initial data collection (optional)
+8. Discover Salesforce dashboards
+9. For each dashboard:
+   a. Retrieve dashboard metadata
+   b. Map to Splunk format
+   c. Generate SimpleXML
+   d. Create dashboard in Splunk
+   e. Validate dashboard
+10. Generate migration report
+```
+
+### 8.2 Detailed Step-by-Step Process
+
+**Phase 1: Initialization**
+1. Load configuration from file
+2. Override with environment variables
+3. Validate all required credentials
+4. Initialize loggers
+5. Create API clients
+
+**Phase 2: Authentication**
+1. Test Splunk connectivity
+2. Authenticate with Splunk (token or basic)
+3. Test Salesforce connectivity
+4. Authenticate with Salesforce (basic auth)
+5. Verify API permissions
+
+**Phase 3: Splunk Configuration**
+1. Check if indexes exist
+2. Create missing indexes
+3. Configure index properties
+4. Verify index creation
+5. Verify Splunk Add-on for Salesforce is installed
+6. Check add-on version and enabled status
+
+**Phase 4: Account Setup**
+1. Check if Salesforce account exists
+2. Create or update account
+3. Test account connectivity
+4. Verify authentication
+
+**Phase 5: Data Input Setup**
+1. For each configured object:
+   - Check if input exists
+   - Retrieve object metadata from Salesforce
+   - Create or update input
+   - Verify input configuration
+2. Log all created inputs
+
+**Phase 6: Dashboard XML Scanning**
+1. Scan designated directory for dashboard XML files
+2. Validate XML file structure and format
+3. Check SimpleXML compliance
+4. Verify all required elements present
+5. Generate validation report
+
+**Phase 7: Dashboard Pipeline Deployment**
+1. Prepare dashboard XMLs for pipeline
+2. Trigger splunk-dashboards pipeline
+3. Monitor pipeline execution
+4. Verify pipeline completion status
+5. Handle deployment failures
+6. Log deployment results
+
+**Phase 8: Dashboard Verification**
+1. Verify all dashboards deployed successfully
+2. Check dashboard accessibility in Splunk
+3. Validate dashboard rendering
+4. Generate deployment report
+5. Log summary statistics
+
+**Phase 9: End-to-End Validation**
+1. Validate Splunk configuration completeness
+   - Verify all indexes created
+   - Verify Salesforce account configured
+   - Verify data inputs configured
+2. Validate dashboard deployment
+   - Verify all dashboards deployed
+   - Check dashboard functionality
+   - Validate data flow
+3. Run health checks
+   - Test Splunk connectivity
+   - Test data ingestion
+   - Verify search functionality
+4. Generate comprehensive validation report
+5. Identify and log any issues
+6. Provide remediation recommendations
+
+## 9. Error Handling Strategy
+
+### 9.1 Error Categories
+- **Configuration Errors**: Invalid config, missing credentials
+- **Network Errors**: Connection failures, timeouts
+- **Authentication Errors**: Invalid credentials, expired tokens
+- **API Errors**: Rate limiting, invalid requests, server errors
+- **Validation Errors**: Invalid data, schema mismatches
+- **Migration Errors**: Dashboard conversion failures
+
+### 9.2 Error Handling Approaches
+- **Fail Fast**: Configuration and authentication errors
+- **Retry with Backoff**: Network and transient API errors
+- **Log and Continue**: Non-critical dashboard conversion issues
+- **Graceful Degradation**: Partial success scenarios
+
+### 9.3 Retry Logic
+```go
+maxRetries: 3
+baseDelay: 2 seconds
+maxDelay: 30 seconds
+backoff: exponential
+
+Retry for:
+- HTTP 429 (rate limit)
+- HTTP 500-504 (server errors)
+- Network timeouts
+- Connection refused
+
+Do not retry:
+- HTTP 400 (bad request)
+- HTTP 401/403 (auth errors)
+- HTTP 404 (not found)
+```
+
+## 10. Testing Strategy
+
+### 10.1 Unit Tests
+- Configuration loading and validation
+- API client request building
+- Dashboard schema mapping
+- Query transformation
+- Error handling logic
+
+### 10.2 Integration Tests
+- Splunk API connectivity
+- Salesforce API connectivity
+- Index creation
+- Account configuration
+- Input creation
+- Dashboard creation
+
+### 10.3 End-to-End Tests
+- Complete migration workflow
+- Multi-dashboard scenarios
+- Error recovery scenarios
+- Resume from failure
+
+### 10.4 Test Environments
+- Local Splunk instance (Docker)
+- Salesforce Developer Edition
+- Mock API servers for CI/CD
+
+## 11. Documentation Requirements
+
+### 11.1 User Documentation
+- **README.md**: Overview, quick start, installation
+- **USAGE.md**: Detailed usage guide with examples
+- **CONFIGURATION.md**: Configuration reference
+- **TROUBLESHOOTING.md**: Common issues and solutions
+
+### 11.2 Developer Documentation
+- **ARCHITECTURE.md**: System architecture and design
+- **API.md**: API client documentation
+- **CONTRIBUTING.md**: Development guidelines
+- **CHANGELOG.md**: Version history
+
+### 11.3 Code Documentation
+- Package-level documentation
+- Function/method documentation
+- Complex algorithm explanations
+- Example code snippets
+
+## 12. Deployment & Operations
+
+### 12.1 Build & Distribution
+- Cross-platform binaries (Linux, macOS, Windows)
+- Docker image
+- Installation via package managers (future)
+- Release artifacts on GitHub
+
+### 12.2 Configuration Management
+- Sample configuration files
+- Environment-specific configs
+- Secrets management best practices
+- Configuration validation tools
+
+### 12.3 Monitoring & Observability
+- Application logs
+- Performance metrics
+- Success/failure rates
+- Dashboard migration statistics
+
+## 13. Future Enhancements
+
+### 13.1 Phase 2 Features
+- OAuth 2.0 authentication support
+- Terraform provider integration
+- Incremental dashboard updates
+- Dashboard versioning
+- Rollback capability
+
+### 13.2 Phase 3 Features
+- Web UI for monitoring
+- Scheduled migrations
+- Multi-tenant support
+- Custom visualization plugins
+- Advanced query optimization
+
+## 14. Success Metrics
+
+### 14.1 Technical Metrics
+- Migration success rate: >95%
+- Average migration time: <5 minutes for 10 dashboards
+- API error rate: <5%
+- Code coverage: >70%
+
+### 14.2 Business Metrics
+- Time saved vs manual process: >90%
+- User satisfaction score: >4/5
+- Adoption rate across teams
+- Reduction in configuration errors
+
+## 15. Risks & Mitigations
+
+### 15.1 Technical Risks
+| Risk | Impact | Probability | Mitigation |
+|------|--------|-------------|------------|
+| Salesforce API changes | High | Medium | Version API calls, monitor deprecations |
+| Splunk API incompatibility | High | Low | Test with multiple Splunk versions |
+| Rate limiting issues | Medium | Medium | Implement aggressive rate limiting |
+| Dashboard conversion failures | Medium | High | Graceful degradation, detailed logging |
+| Credential exposure | High | Low | Secure credential handling, code review |
+
+### 15.2 Business Risks
+| Risk | Impact | Probability | Mitigation |
+|------|--------|-------------|------------|
+| Incomplete dashboards | Medium | Medium | Validation checks, user review process |
+| Data loss during migration | High | Low | Idempotent operations, backup strategy |
+| Extended downtime | Medium | Low | Incremental migration, rollback plan |
+
+## 16. Timeline & Milestones
+
+### Phase 1: Foundation (Weeks 1-2)
+- Project setup and structure
+- Configuration management
+- API client implementation (Splunk & Salesforce)
+- Authentication implementation
+- Basic error handling and logging
+
+### Phase 2: Splunk Configuration (Weeks 3-4)
+- Index management implementation
+- Splunk Add-on verification implementation
+- Account configuration implementation
+- Data input creation implementation
+- Integration testing
+- Documentation
+
+### Phase 3: Dashboard Pipeline Integration (Weeks 5-6)
+- Dashboard XML scanner implementation
+- Dashboard XML validator implementation
+- Pipeline trigger implementation
+- Dashboard verification implementation
+- Pipeline orchestration
+- Integration testing
+
+### Phase 4: End-to-End Validation (Week 7)
+- Complete workflow orchestration
+- End-to-end validation framework
+- Configuration validation checks
+- Dashboard deployment validation
+- Health check implementation
+- Comprehensive reporting
+
+### Phase 5: Polish & Release (Week 8)
+- Comprehensive testing
+- Documentation completion
+- Example configurations
+- Release preparation
+- User guide creation
+
+## 17. Dependencies
+
+### 17.1 External Dependencies
+- Splunk Enterprise 8.0+ or Splunk Cloud
+- Splunk Add-on for Salesforce (pre-installed)
+- Salesforce API access
+- Network connectivity
+
+### 17.2 Go Dependencies
+```
+go.mod:
+- github.com/spf13/cobra (CLI framework)
+- github.com/spf13/viper (configuration)
+- go.uber.org/zap (logging)
+- github.com/stretchr/testify (testing)
+- golang.org/x/time/rate (rate limiting)
+```
+
+## 18. Glossary
+
+- **SPL**: Splunk Processing Language (query language)
+- **SOQL**: Salesforce Object Query Language
+- **SimpleXML**: Splunk dashboard XML format
+- **Add-on**: Splunk application extension
+- **Input**: Data collection configuration in Splunk
+- **Index**: Data storage location in Splunk
+- **Object**: Salesforce data entity (e.g., Account, Contact)
+
+## 19. References
+
+### Documentation
+- Splunk REST API Reference: https://docs.splunk.com/Documentation/Splunk/latest/RESTREF
+- Salesforce REST API Guide: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/
+- Splunk Add-on for Salesforce: https://splunkbase.splunk.com/app/3549
+- Splunk SimpleXML Reference: https://docs.splunk.com/Documentation/Splunk/latest/Viz/PanelreferenceforSimplifiedXML
+
+### Working Examples
+- See `working_curl.md` for tested API calls
+- See `Salesforce_to_Splunk_Migration_Guide.md` for manual process
+- See `openapi.json` for Splunk Add-on API schema
+
+## 20. Approval & Sign-off
+
+**Document Version**: 1.0
+**Last Updated**: December 3, 2025
+**Status**: Draft - Pending Review
+
+**Stakeholders**:
+- Product Owner: [Name]
+- Technical Lead: [Name]
+- Salesforce Admin: [Name]
+- Splunk Admin: [Name]

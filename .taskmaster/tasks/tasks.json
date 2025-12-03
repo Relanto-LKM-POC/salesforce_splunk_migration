@@ -1,0 +1,1012 @@
+{
+  "version": "1.0.0",
+  "project": "Salesforce to Splunk Dashboard Migration Automation",
+  "description": "Golang standalone application for automated Salesforce to Splunk dashboard migration via REST APIs",
+  "metadata": {
+    "created": "2025-12-03",
+    "prdVersion": "1.0",
+    "technology": "Go 1.21+",
+    "totalPhases": 4
+  },
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Project Setup and Initialization",
+      "phase": "Phase 1: Foundation",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 4,
+      "description": "Initialize Go project with proper structure, modules, and dependencies",
+      "requirements": [
+        "Create project directory structure as per PRD",
+        "Initialize Go modules (go mod init)",
+        "Add required dependencies (cobra, viper, zap, testify)",
+        "Create main.go entry point",
+        "Setup Makefile for build automation",
+        "Create .gitignore for Go projects",
+        "Setup .env.example with all required variables"
+      ],
+      "acceptanceCriteria": [
+        "Project structure matches PRD specifications",
+        "go.mod and go.sum files created",
+        "All dependencies resolved successfully",
+        "make build command works",
+        "README.md created with project overview"
+      ],
+      "dependencies": [],
+      "tags": ["setup", "infrastructure", "foundation"]
+    },
+    {
+      "id": "TASK-002",
+      "title": "Configuration Management Implementation",
+      "phase": "Phase 1: Foundation",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 8,
+      "functionalRequirement": "FR-001",
+      "description": "Implement configuration loading from files and environment variables using Viper",
+      "requirements": [
+        "Create config package in internal/config/",
+        "Implement config.yaml loading with Viper",
+        "Support environment variable overrides",
+        "Implement configuration validation",
+        "Support multiple environment profiles (dev, uat, prod)",
+        "Create configuration models in pkg/models/config.go",
+        "Implement secure credential handling",
+        "Create example configuration files"
+      ],
+      "acceptanceCriteria": [
+        "Configuration loads from YAML files successfully",
+        "Environment variables override file values",
+        "Validation fails fast with clear error messages",
+        "Support for .env files in development",
+        "Unit tests for config loading (>80% coverage)"
+      ],
+      "files": [
+        "internal/config/config.go",
+        "internal/config/env.go",
+        "pkg/models/config.go",
+        "configs/config.yaml",
+        "configs/objects.yaml",
+        ".env.example"
+      ],
+      "dependencies": ["TASK-001"],
+      "tags": ["configuration", "foundation", "core"]
+    },
+    {
+      "id": "TASK-003",
+      "title": "Logging Infrastructure Setup",
+      "phase": "Phase 1: Foundation",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 4,
+      "functionalRequirement": "FR-012",
+      "description": "Implement structured logging using Zap with configurable levels",
+      "requirements": [
+        "Create logger package in internal/utils/",
+        "Initialize Zap logger with structured logging",
+        "Implement configurable log levels (debug, info, warn, error)",
+        "Setup log formatting (JSON for production, console for dev)",
+        "Implement sanitization for sensitive data",
+        "Add context-aware logging helpers",
+        "Configure log output destinations"
+      ],
+      "acceptanceCriteria": [
+        "Logger initialized successfully with Zap",
+        "Log levels configurable via config",
+        "Sensitive data automatically sanitized",
+        "Logs provide clear operation visibility",
+        "Performance overhead minimal (<5ms per log)"
+      ],
+      "files": [
+        "internal/utils/logger.go"
+      ],
+      "dependencies": ["TASK-002"],
+      "tags": ["logging", "observability", "foundation"]
+    },
+    {
+      "id": "TASK-004",
+      "title": "Retry and Rate Limiting Utilities",
+      "phase": "Phase 1: Foundation",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 6,
+      "functionalRequirement": "FR-011",
+      "description": "Implement retry logic with exponential backoff and rate limiting",
+      "requirements": [
+        "Create retry package in internal/utils/",
+        "Implement exponential backoff algorithm",
+        "Support configurable max retries and delays",
+        "Handle HTTP status codes appropriately",
+        "Implement rate limiter using golang.org/x/time/rate",
+        "Add circuit breaker pattern for failing services",
+        "Include retry context with attempt tracking"
+      ],
+      "acceptanceCriteria": [
+        "Transient errors automatically retried",
+        "Exponential backoff working correctly",
+        "Rate limiting prevents API throttling",
+        "Circuit breaker opens after threshold failures",
+        "Unit tests for all retry scenarios"
+      ],
+      "files": [
+        "internal/utils/retry.go",
+        "internal/utils/retry_test.go"
+      ],
+      "dependencies": ["TASK-003"],
+      "tags": ["utilities", "error-handling", "resilience"]
+    },
+    {
+      "id": "TASK-005",
+      "title": "Splunk API Client - Core Implementation",
+      "phase": "Phase 1: Foundation",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 10,
+      "functionalRequirement": "FR-002",
+      "description": "Implement Splunk REST API client with authentication",
+      "requirements": [
+        "Create splunk package in internal/splunk/",
+        "Implement HTTP client with custom transport",
+        "Support SSL certificate verification bypass (-k flag)",
+        "Implement request/response logging",
+        "Add timeout and context support",
+        "Create base URL and endpoint management",
+        "Implement common error handling",
+        "Add request retry integration"
+      ],
+      "acceptanceCriteria": [
+        "HTTP client properly configured",
+        "SSL verification can be disabled",
+        "All requests include timeout",
+        "Errors properly wrapped with context",
+        "Integration with retry mechanism works"
+      ],
+      "files": [
+        "internal/splunk/client.go",
+        "internal/splunk/client_test.go",
+        "pkg/models/splunk.go"
+      ],
+      "dependencies": ["TASK-004"],
+      "tags": ["splunk", "api-client", "core"]
+    },
+    {
+      "id": "TASK-006",
+      "title": "Splunk Authentication Implementation",
+      "phase": "Phase 1: Foundation",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 8,
+      "functionalRequirement": "FR-002",
+      "description": "Implement Splunk authentication with token and basic auth support",
+      "requirements": [
+        "Implement token-based authentication",
+        "Implement basic authentication (username/password)",
+        "Create token generation endpoint call",
+        "Implement token storage and reuse",
+        "Add authentication validation",
+        "Handle authentication failures gracefully",
+        "Support Authorization header formatting"
+      ],
+      "acceptanceCriteria": [
+        "Successfully authenticate with Splunk REST API",
+        "Token generation works when needed",
+        "Invalid credentials result in clear error",
+        "Token reused within session",
+        "Both auth methods tested and working"
+      ],
+      "files": [
+        "internal/splunk/auth.go",
+        "internal/splunk/auth_test.go"
+      ],
+      "apiReference": [
+        "POST /services/auth/login",
+        "POST /services/authorization/tokens"
+      ],
+      "dependencies": ["TASK-005"],
+      "tags": ["splunk", "authentication", "security"]
+    },
+    {
+      "id": "TASK-007",
+      "title": "Splunk Index Management Implementation",
+      "phase": "Phase 2: Splunk Configuration",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 10,
+      "functionalRequirement": "FR-004",
+      "description": "Implement Splunk index creation and management via REST API",
+      "requirements": [
+        "Create index.go in internal/splunk/",
+        "Implement CreateIndex function",
+        "Implement GetIndex function",
+        "Implement UpdateIndex function",
+        "Support index configuration (size, retention, paths)",
+        "Handle existing index scenarios",
+        "Implement index validation",
+        "Add batch index creation support"
+      ],
+      "acceptanceCriteria": [
+        "Indexes created successfully via REST API",
+        "Index properties configured as specified",
+        "Existing indexes detected and handled",
+        "Clear logging of index operations",
+        "Integration tests passing"
+      ],
+      "files": [
+        "internal/splunk/index.go",
+        "internal/splunk/index_test.go"
+      ],
+      "apiReference": [
+        "POST /services/data/indexes",
+        "GET /services/data/indexes/{name}",
+        "POST /services/data/indexes/{name}"
+      ],
+      "dependencies": ["TASK-006"],
+      "tags": ["splunk", "indexes", "configuration"]
+    },
+    {
+      "id": "TASK-008",
+      "title": "Splunk Add-on Verification",
+      "phase": "Phase 2: Splunk Configuration",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 4,
+      "description": "Verify Splunk Add-on for Salesforce is installed and configured",
+      "requirements": [
+        "Create addon_verifier.go in internal/splunk/",
+        "Query Splunk for installed apps via REST API",
+        "Check if Splunk_TA_salesforce is present",
+        "Verify add-on version compatibility",
+        "Check add-on enabled status",
+        "Validate add-on configuration accessibility",
+        "Provide clear error if add-on not found",
+        "Log add-on version and status information"
+      ],
+      "acceptanceCriteria": [
+        "Successfully detects Splunk Add-on for Salesforce",
+        "Version information retrieved correctly",
+        "Enabled status verified",
+        "Clear error message if add-on missing",
+        "Validation passes before proceeding with configuration"
+      ],
+      "files": [
+        "internal/splunk/addon_verifier.go",
+        "internal/splunk/addon_verifier_test.go"
+      ],
+      "apiReference": [
+        "GET /services/apps/local",
+        "GET /services/apps/local/Splunk_TA_salesforce"
+      ],
+      "dependencies": ["TASK-007"],
+      "tags": ["splunk", "addon", "verification", "prerequisites"]
+    },
+    {
+      "id": "TASK-009",
+      "title": "Splunk Account Configuration Implementation",
+      "phase": "Phase 2: Splunk Configuration",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 12,
+      "functionalRequirement": "FR-005",
+      "description": "Implement Salesforce account configuration in Splunk Add-on via REST API",
+      "requirements": [
+        "Create account.go in internal/splunk/",
+        "Implement CreateAccount function",
+        "Implement GetAccount function",
+        "Implement UpdateAccount function",
+        "Support basic authentication parameters",
+        "Handle endpoint configuration (prod/sandbox)",
+        "Configure API version",
+        "Validate account creation success",
+        "Support multiple account configurations"
+      ],
+      "acceptanceCriteria": [
+        "Account created successfully via REST API",
+        "Authentication parameters properly configured",
+        "Account accessible from Splunk Add-on",
+        "Clear error messages for failures",
+        "Integration tests with real Splunk instance"
+      ],
+      "files": [
+        "internal/splunk/account.go",
+        "internal/splunk/account_test.go"
+      ],
+      "apiReference": [
+        "POST /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_account",
+        "GET /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_account/{name}",
+        "POST /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_account/{name}"
+      ],
+      "curlReference": "See working_curl.md for tested examples",
+      "dependencies": ["TASK-007", "TASK-008"],
+      "tags": ["splunk", "account", "configuration"]
+    },
+    {
+      "id": "TASK-010",
+      "title": "Splunk Data Input Implementation",
+      "phase": "Phase 2: Splunk Configuration",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 14,
+      "functionalRequirement": "FR-006",
+      "description": "Implement Salesforce object data input creation via REST API",
+      "requirements": [
+        "Create input.go in internal/splunk/",
+        "Implement CreateInput function",
+        "Implement GetInput function",
+        "Implement UpdateInput function",
+        "Support standard and custom objects",
+        "Configure object fields collection",
+        "Set collection interval and delay",
+        "Configure start date for data collection",
+        "Handle existing inputs (update or skip)",
+        "Support batch input creation"
+      ],
+      "acceptanceCriteria": [
+        "Data inputs created successfully",
+        "Fields properly specified and collected",
+        "Collection schedule configured correctly",
+        "Data flowing into Splunk index",
+        "Existing inputs handled appropriately"
+      ],
+      "files": [
+        "internal/splunk/input.go",
+        "internal/splunk/input_test.go"
+      ],
+      "apiReference": [
+        "POST /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object",
+        "GET /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object",
+        "POST /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object/{name}"
+      ],
+      "curlReference": "See working_curl.md for tested examples",
+      "dependencies": ["TASK-009"],
+      "tags": ["splunk", "inputs", "configuration"]
+    },
+    {
+      "id": "TASK-011",
+      "title": "Configuration File Templates and Examples",
+      "phase": "Phase 2: Splunk Configuration",
+      "priority": "medium",
+      "status": "pending",
+      "estimatedHours": 4,
+      "description": "Create comprehensive configuration templates and examples",
+      "requirements": [
+        "Create config.yaml template with all options",
+        "Create objects.yaml with common Salesforce objects",
+        "Create environment-specific config examples (dev, uat, prod)",
+        "Document all configuration options",
+        "Include validation rules in configs",
+        "Create multiple use-case examples"
+      ],
+      "acceptanceCriteria": [
+        "All config templates created",
+        "Examples cover common scenarios",
+        "Documentation clear and complete",
+        "Validation rules documented",
+        "Templates load successfully"
+      ],
+      "files": [
+        "configs/config.yaml",
+        "configs/objects.yaml",
+        "configs/mappings.yaml",
+        "configs/examples/dev.yaml",
+        "configs/examples/uat.yaml",
+        "configs/examples/prod.yaml"
+      ],
+      "dependencies": ["TASK-002"],
+      "tags": ["configuration", "documentation", "examples"]
+    },
+    {
+      "id": "TASK-011",
+      "title": "Pre-flight Validation Implementation",
+      "phase": "Phase 2: Splunk Configuration",
+      "priority": "medium",
+      "status": "pending",
+      "estimatedHours": 8,
+      "functionalRequirement": "FR-014",
+      "description": "Implement configuration and connectivity validation before migration",
+      "requirements": [
+        "Create validator.go in internal/utils/",
+        "Implement config file syntax validation",
+        "Test Splunk connectivity",
+        "Test Salesforce connectivity",
+        "Verify Splunk Add-on installation",
+        "Check required permissions",
+        "Validate object configurations",
+        "Generate validation report"
+      ],
+      "acceptanceCriteria": [
+        "All validations run successfully",
+        "Connectivity issues detected early",
+        "Configuration errors reported clearly",
+        "Validation report actionable",
+        "Fails fast on critical issues"
+      ],
+      "files": [
+        "internal/utils/validator.go",
+        "internal/utils/validator_test.go"
+      ],
+      "dependencies": ["TASK-006"],
+      "tags": ["validation", "pre-flight", "quality"]
+    },
+    {
+      "id": "TASK-012",
+      "title": "Dashboard XML File Scanner Implementation",
+      "phase": "Phase 3: Dashboard Deployment Pipeline",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 6,
+      "description": "Implement scanner to discover and read Splunk dashboard XML files from designated directory",
+      "requirements": [
+        "Create dashboard package in internal/dashboard/",
+        "Implement directory scanner for XML files",
+        "Support configurable dashboard directory path",
+        "Read and parse XML file contents",
+        "Extract dashboard metadata (name, description) from XML",
+        "Validate XML file structure",
+        "Support nested directory structures",
+        "Handle file read errors gracefully"
+      ],
+      "acceptanceCriteria": [
+        "Scanner discovers all XML files in configured directory",
+        "XML files read successfully",
+        "Dashboard metadata extracted correctly",
+        "Invalid XML files detected and logged",
+        "Nested directories traversed properly"
+      ],
+      "files": [
+        "internal/dashboard/scanner.go",
+        "internal/dashboard/scanner_test.go",
+        "pkg/models/dashboard.go"
+      ],
+      "dependencies": ["TASK-002"],
+      "tags": ["dashboard", "scanner", "xml"]
+    },
+    {
+      "id": "TASK-013",
+      "title": "Dashboard XML Validation Implementation",
+      "phase": "Phase 3: Dashboard Deployment Pipeline",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 8,
+      "description": "Implement validation for Splunk dashboard XML files",
+      "requirements": [
+        "Create validator.go in internal/dashboard/",
+        "Validate XML syntax and structure",
+        "Verify Splunk SimpleXML format compliance",
+        "Check required XML elements (dashboard, label, row, panel)",
+        "Validate panel types (chart, table, single, event, etc.)",
+        "Verify search queries are present",
+        "Check for common XML issues",
+        "Generate detailed validation reports"
+      ],
+      "acceptanceCriteria": [
+        "XML syntax validation working",
+        "SimpleXML format verified",
+        "Required elements checked",
+        "Invalid dashboards rejected with clear errors",
+        "Validation report generated"
+      ],
+      "files": [
+        "internal/dashboard/validator.go",
+        "internal/dashboard/validator_test.go"
+      ],
+      "dependencies": ["TASK-012"],
+      "tags": ["dashboard", "validation", "xml"]
+    },
+    {
+      "id": "TASK-014",
+      "title": "Dashboard Pipeline Trigger",
+      "phase": "Phase 3: Dashboard Deployment Pipeline",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 8,
+      "description": "Trigger splunk-dashboards pipeline to deploy validated XMLs to Splunk",
+      "requirements": [
+        "Create pipeline_trigger.go in internal/dashboard/",
+        "Prepare dashboard XML files for pipeline consumption",
+        "Copy/organize validated XMLs to pipeline input directory",
+        "Trigger splunk-dashboards pipeline execution",
+        "Pass necessary configuration parameters to pipeline",
+        "Monitor pipeline execution status",
+        "Handle pipeline execution errors",
+        "Wait for pipeline completion",
+        "Retrieve pipeline execution logs"
+      ],
+      "acceptanceCriteria": [
+        "Pipeline triggered successfully",
+        "Dashboard XMLs properly prepared for pipeline",
+        "Pipeline execution monitored",
+        "Success/failure status captured",
+        "Pipeline logs retrieved and logged",
+        "Error handling for pipeline failures"
+      ],
+      "files": [
+        "internal/dashboard/pipeline_trigger.go",
+        "internal/dashboard/pipeline_trigger_test.go"
+      ],
+      "dependencies": ["TASK-014"],
+      "tags": ["pipeline", "dashboard", "deployment", "automation"]
+    },
+    {
+      "id": "TASK-016",
+      "title": "Dashboard Deployment Verification",
+      "phase": "Phase 3: Dashboard Deployment Pipeline",
+      "priority": "medium",
+      "status": "pending",
+      "estimatedHours": 6,
+      "description": "Implement post-deployment verification for dashboards",
+      "requirements": [
+        "Create verifier.go in internal/dashboard/",
+        "Query Splunk to verify dashboard exists",
+        "Validate dashboard is accessible",
+        "Compare deployed XML with source XML",
+        "Check dashboard rendering status",
+        "Verify dashboard permissions",
+        "Generate verification report",
+        "Flag any deployment discrepancies"
+      ],
+      "acceptanceCriteria": [
+        "Dashboard existence verified in Splunk",
+        "Deployed content matches source",
+        "Permissions verified correctly",
+        "Verification report generated",
+        "Discrepancies clearly logged"
+      ],
+      "files": [
+        "internal/dashboard/verifier.go",
+        "internal/dashboard/verifier_test.go"
+      ],
+      "dependencies": ["TASK-014"],
+      "tags": ["dashboard", "verification", "quality"]
+    },
+    {
+      "id": "TASK-016",
+      "title": "Dashboard Deployment Pipeline Orchestration",
+      "phase": "Phase 3: Dashboard Deployment Pipeline",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 8,
+      "description": "Orchestrate complete dashboard deployment pipeline workflow",
+      "requirements": [
+        "Create pipeline.go in internal/dashboard/",
+        "Implement scan → validate → deploy → verify workflow",
+        "Support parallel dashboard deployments",
+        "Handle partial deployment scenarios",
+        "Implement rollback on failures",
+        "Track deployment statistics",
+        "Generate comprehensive deployment report",
+        "Support dry-run mode"
+      ],
+      "acceptanceCriteria": [
+        "Complete pipeline executes successfully",
+        "Parallel deployments working efficiently",
+        "Rollback working on failures",
+        "Statistics tracked accurately",
+        "Deployment report comprehensive",
+        "Dry-run mode validates without deploying"
+      ],
+      "files": [
+        "internal/dashboard/pipeline.go",
+        "internal/dashboard/pipeline_test.go",
+        "internal/dashboard/report.go"
+      ],
+      "dependencies": ["TASK-012", "TASK-013", "TASK-014", "TASK-015"],
+      "tags": ["dashboard", "pipeline", "orchestration"]
+    },
+    {
+      "id": "TASK-017",
+      "title": "End-to-End Validation Framework",
+      "phase": "Phase 4: Validation",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 12,
+      "description": "Implement comprehensive end-to-end validation framework to verify all configuration and deployment steps",
+      "requirements": [
+        "Create validator.go in internal/validation/",
+        "Validate Splunk configuration completeness (indexes, accounts, inputs)",
+        "Validate dashboard deployment status",
+        "Implement health check for Splunk connectivity",
+        "Verify data ingestion is working",
+        "Check dashboard functionality and accessibility",
+        "Generate comprehensive validation report",
+        "Provide remediation recommendations for failures",
+        "Support partial validation (specific components)",
+        "Log all validation results"
+      ],
+      "acceptanceCriteria": [
+        "All Splunk configurations validated successfully",
+        "Dashboard deployment status verified",
+        "Health checks pass for connectivity and data flow",
+        "Comprehensive validation report generated",
+        "Clear identification of any issues",
+        "Actionable remediation steps provided"
+      ],
+      "files": [
+        "internal/validation/validator.go",
+        "internal/validation/config_validator.go",
+        "internal/validation/dashboard_validator.go",
+        "internal/validation/health_check.go",
+        "internal/validation/report.go",
+        "internal/validation/validator_test.go"
+      ],
+      "apiReference": [
+        "GET /services/data/indexes - Verify indexes",
+        "GET /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_account - Verify accounts",
+        "GET /servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object - Verify inputs",
+        "GET /servicesNS/admin/search/data/ui/views - Verify dashboards",
+        "POST /services/search/jobs - Test search functionality"
+      ],
+      "dependencies": ["TASK-013", "TASK-016"],
+      "tags": ["validation", "verification", "quality", "health-check"]
+    },
+    {
+      "id": "TASK-018",
+      "title": "Migration Orchestration - Main Workflow",
+      "phase": "Phase 5: Polish & Release",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 16,
+      "description": "Implement end-to-end migration orchestration workflow",
+      "requirements": [
+        "Create migration orchestrator",
+        "Implement Phase 1: Initialization and Configuration Loading",
+        "Implement Phase 2: Splunk Authentication",
+        "Implement Phase 3: Splunk Index Creation",
+        "Implement Phase 4: Salesforce Account Configuration in Splunk",
+        "Implement Phase 5: Data Input Setup for Salesforce Objects",
+        "Implement Phase 6: Dashboard XML Scanning and Validation",
+        "Implement Phase 7: Dashboard Deployment to Splunk",
+        "Implement Phase 8: Verification and Reporting",
+        "Add progress tracking for each phase",
+        "Implement rollback on critical failures",
+        "Generate comprehensive migration report"
+      ],
+      "acceptanceCriteria": [
+        "Full workflow completes successfully",
+        "Each phase properly orchestrated",
+        "Progress clearly communicated",
+        "Errors handled at each phase",
+        "Migration report generated"
+      ],
+      "files": [
+        "internal/orchestrator/migration.go",
+        "internal/orchestrator/phases.go",
+        "internal/orchestrator/report.go"
+      ],
+      "dependencies": ["TASK-016", "TASK-017"],
+      "tags": ["orchestration", "workflow", "core"]
+    },
+    {
+      "id": "TASK-019",
+      "title": "Unit Tests - Core Packages",
+      "phase": "Phase 5: Polish & Release",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 20,
+      "description": "Implement comprehensive unit tests for all core packages",
+      "requirements": [
+        "Write tests for config package (>80% coverage)",
+        "Write tests for Splunk client (>70% coverage)",
+        "Write tests for dashboard package (>80% coverage)",
+        "Write tests for utils package (>90% coverage)",
+        "Use testify for assertions",
+        "Create test fixtures and mocks",
+        "Setup table-driven tests",
+        "Add benchmark tests for critical paths"
+      ],
+      "acceptanceCriteria": [
+        "Overall code coverage >70%",
+        "All critical paths tested",
+        "Edge cases covered",
+        "Tests run successfully in CI",
+        "No flaky tests"
+      ],
+      "files": [
+        "Multiple *_test.go files across packages"
+      ],
+      "dependencies": ["TASK-018"],
+      "tags": ["testing", "unit-tests", "quality"]
+    },
+    {
+      "id": "TASK-020",
+      "title": "Integration Tests - API Interactions",
+      "phase": "Phase 5: Polish & Release",
+      "priority": "medium",
+      "status": "pending",
+      "estimatedHours": 16,
+      "description": "Implement integration tests for API interactions",
+      "requirements": [
+        "Setup test Splunk instance (Docker)",
+        "Write integration tests for Splunk API",
+        "Test index creation",
+        "Test account configuration",
+        "Test input creation",
+        "Test dashboard creation",
+        "Use environment variables for test credentials",
+        "Make tests optional (skip if no credentials)"
+      ],
+      "acceptanceCriteria": [
+        "Integration tests pass with real APIs",
+        "Tests properly isolated",
+        "Test data cleanup after runs",
+        "Tests can run in CI with mocks",
+        "Clear documentation for running tests"
+      ],
+      "files": [
+        "test/integration/splunk_test.go",
+        "test/integration/dashboard_test.go",
+        "test/integration/e2e_test.go"
+      ],
+      "dependencies": ["TASK-018"],
+      "tags": ["testing", "integration-tests", "quality"]
+    },
+    {
+      "id": "TASK-020",
+      "title": "Error Handling Enhancement",
+      "phase": "Phase 4: Polish & Release",
+      "priority": "medium",
+      "status": "pending",
+      "estimatedHours": 8,
+      "functionalRequirement": "FR-011",
+      "description": "Enhance error handling across all packages with custom error types",
+      "requirements": [
+        "Create custom error types for different scenarios",
+        "Implement error wrapping with context",
+        "Add error categorization (config, network, auth, api, validation)",
+        "Create actionable error messages",
+        "Implement error logging with stack traces",
+        "Add error recovery suggestions",
+        "Create error documentation"
+      ],
+      "acceptanceCriteria": [
+        "Errors properly categorized",
+        "Error messages clear and actionable",
+        "Stack traces available in debug mode",
+        "Users understand how to fix errors",
+        "Error handling consistent across codebase"
+      ],
+      "files": [
+        "pkg/errors/errors.go",
+        "pkg/errors/types.go"
+      ],
+      "dependencies": ["TASK-016"],
+      "tags": ["error-handling", "quality", "ux"]
+    },
+    {
+      "id": "TASK-022",
+      "title": "Documentation - User Guide",
+      "phase": "Phase 5: Polish & Release",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 12,
+      "description": "Create comprehensive user documentation",
+      "requirements": [
+        "Write comprehensive README.md",
+        "Create USAGE.md with detailed examples",
+        "Create CONFIGURATION.md reference",
+        "Create TROUBLESHOOTING.md guide",
+        "Document all CLI commands",
+        "Provide example configurations",
+        "Add diagrams for workflows",
+        "Create quick start guide"
+      ],
+      "acceptanceCriteria": [
+        "Documentation clear and comprehensive",
+        "Examples work as documented",
+        "Common issues addressed",
+        "User can get started in <15 minutes",
+        "Documentation covers all features"
+      ],
+      "files": [
+        "README.md",
+        "docs/USAGE.md",
+        "docs/CONFIGURATION.md",
+        "docs/TROUBLESHOOTING.md",
+        "docs/QUICKSTART.md"
+      ],
+      "dependencies": ["TASK-016"],
+      "tags": ["documentation", "user-guide"]
+    },
+    {
+      "id": "TASK-023",
+      "title": "Documentation - Developer Guide",
+      "phase": "Phase 5: Polish & Release",
+      "priority": "medium",
+      "status": "pending",
+      "estimatedHours": 8,
+      "description": "Create developer documentation for contributors",
+      "requirements": [
+        "Create ARCHITECTURE.md with system design",
+        "Create API.md with client documentation",
+        "Create CONTRIBUTING.md with guidelines",
+        "Create CHANGELOG.md template",
+        "Document package structure",
+        "Add code examples and patterns",
+        "Document testing approach",
+        "Create development setup guide"
+      ],
+      "acceptanceCriteria": [
+        "Developers can understand architecture",
+        "Contribution guidelines clear",
+        "Code patterns documented",
+        "Setup process documented",
+        "API usage examples provided"
+      ],
+      "files": [
+        "docs/ARCHITECTURE.md",
+        "docs/API.md",
+        "CONTRIBUTING.md",
+        "CHANGELOG.md"
+      ],
+      "dependencies": ["TASK-021"],
+      "tags": ["documentation", "developer-guide"]
+    },
+    {
+      "id": "TASK-024",
+      "title": "Build and Release Automation",
+      "phase": "Phase 5: Polish & Release",
+      "priority": "medium",
+      "status": "pending",
+      "estimatedHours": 8,
+      "description": "Setup build automation and release process",
+      "requirements": [
+        "Create Makefile with build targets",
+        "Setup cross-compilation for Linux, macOS, Windows",
+        "Create release script",
+        "Setup version management",
+        "Create Docker image",
+        "Create Dockerfile with multi-stage build",
+        "Setup GitHub Actions for CI/CD (optional)",
+        "Create release artifacts"
+      ],
+      "acceptanceCriteria": [
+        "Builds work on all platforms",
+        "Binaries properly versioned",
+        "Docker image builds successfully",
+        "Release process documented",
+        "Artifacts ready for distribution"
+      ],
+      "files": [
+        "Makefile",
+        "Dockerfile",
+        "scripts/build.sh",
+        "scripts/release.sh",
+        ".github/workflows/ci.yml"
+      ],
+      "dependencies": ["TASK-017"],
+      "tags": ["build", "release", "automation"]
+    },
+    {
+      "id": "TASK-025",
+      "title": "Performance Optimization",
+      "phase": "Phase 5: Polish & Release",
+      "priority": "low",
+      "status": "pending",
+      "estimatedHours": 10,
+      "description": "Optimize performance for large-scale migrations",
+      "requirements": [
+        "Profile application for bottlenecks",
+        "Implement concurrent API calls where safe",
+        "Optimize memory usage",
+        "Add connection pooling",
+        "Implement batch operations",
+        "Add caching for repeated queries",
+        "Optimize dashboard parsing",
+        "Add performance metrics logging"
+      ],
+      "acceptanceCriteria": [
+        "Migration time reduced by >30%",
+        "Memory usage <500MB",
+        "No memory leaks",
+        "Concurrent operations working safely",
+        "Performance metrics tracked"
+      ],
+      "dependencies": ["TASK-017", "TASK-018"],
+      "tags": ["performance", "optimization"]
+    },
+    {
+      "id": "TASK-025",
+      "title": "End-to-End Testing and Validation",
+      "phase": "Phase 4: Polish & Release",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 12,
+      "description": "Perform comprehensive end-to-end testing",
+      "requirements": [
+        "Test complete migration workflow",
+        "Test with multiple dashboard types",
+        "Test error recovery scenarios",
+        "Test with different environments (prod/sandbox)",
+        "Test with large datasets (100+ dashboards)",
+        "Validate migrated dashboards in Splunk",
+        "Test resume from failure",
+        "Performance testing"
+      ],
+      "acceptanceCriteria": [
+        "Full workflow completes successfully",
+        "All dashboard types migrate correctly",
+        "Error recovery working",
+        "Performance meets requirements (<5 min for 10 dashboards)",
+        "No data loss during migration"
+      ],
+      "dependencies": ["TASK-017", "TASK-018", "TASK-019"],
+      "tags": ["testing", "e2e", "validation"]
+    },
+    {
+      "id": "TASK-027",
+      "title": "Final Release Preparation",
+      "phase": "Phase 5: Polish & Release",
+      "priority": "high",
+      "status": "pending",
+      "estimatedHours": 6,
+      "description": "Prepare final release package",
+      "requirements": [
+        "Complete all documentation",
+        "Verify all tests passing",
+        "Create release notes",
+        "Package binaries for distribution",
+        "Create example project structure",
+        "Test installation process",
+        "Create demo video or screenshots",
+        "Prepare announcement"
+      ],
+      "acceptanceCriteria": [
+        "All documentation complete",
+        "All tests passing",
+        "Release artifacts ready",
+        "Installation tested on all platforms",
+        "Example configurations validated"
+      ],
+      "dependencies": ["TASK-022", "TASK-023", "TASK-024", "TASK-025"],
+      "tags": ["release", "final"]
+    }
+  ],
+  "summary": {
+    "totalTasks": 27,
+    "totalEstimatedHours": 222,
+    "phases": [
+      {
+        "name": "Phase 1: Foundation",
+        "tasks": 6,
+        "hours": 40,
+        "description": "Core infrastructure, configuration, logging, retry logic, and Splunk API client with authentication"
+      },
+      {
+        "name": "Phase 2: Splunk Configuration",
+        "tasks": 6,
+        "hours": 48,
+        "description": "Splunk indexes, Add-on verification, Salesforce account setup, data inputs, configuration templates, and validation"
+      },
+      {
+        "name": "Phase 3: Dashboard Deployment Pipeline",
+        "tasks": 5,
+        "hours": 38,
+        "description": "Dashboard XML scanning, validation, pipeline trigger, verification, and orchestration"
+      },
+      {
+        "name": "Phase 4: End-to-End Validation",
+        "tasks": 1,
+        "hours": 12,
+        "description": "Comprehensive validation framework to verify all configurations and deployments"
+      },
+      {
+        "name": "Phase 5: Polish & Release",
+        "tasks": 9,
+        "hours": 84,
+        "description": "Workflow orchestration, comprehensive testing, documentation, build automation, and release"
+      }
+    ],
+    "priorities": {
+      "high": 16,
+      "medium": 9,
+      "low": 2
+    },
+    "notes": [
+      "Manual steps: (1) Install Splunk Add-on for Salesforce, (2) Create dashboard XML files",
+      "Dashboard XMLs should be stored in a designated directory (e.g., dashboards/)",
+      "Application verifies Splunk Add-on installation before proceeding",
+      "Dashboard deployment handled by triggering splunk-dashboards pipeline",
+      "The application automates: Splunk configuration validation + Pipeline trigger for dashboard deployment"
+    ]
+  }
+}
