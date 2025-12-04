@@ -33,3 +33,7 @@ type Message struct {
 	Type string `json:"type"`
 	Text string `json:"text"`
 }
+
+type AuthResponse struct {
+	SessionKey string `json:"sessionKey"`
+}

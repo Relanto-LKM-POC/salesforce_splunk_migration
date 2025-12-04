@@ -107,12 +107,30 @@ func Execute() error {
 		}
 	}
 
-	// Step 5: List all created data inputs (verification)
+	// Step 5: Verify only the data inputs created by this code
 	fmt.Println("\n🔍 Step 5: Verifying created data inputs...")
 	if existingInputs, err := splunkService.ListDataInputs(); err == nil {
-		fmt.Printf("✅ Found %d data inputs in Splunk:\n", len(existingInputs))
+		// Create a map of created input names for quick lookup
+		createdInputNames := make(map[string]bool)
+		for _, input := range dataInputs {
+			createdInputNames[input.Name] = true
+		}
+
+		// Filter to show only inputs created by this code
+		var ourInputs []string
 		for _, name := range existingInputs {
-			fmt.Printf("  - %s\n", name)
+			if createdInputNames[name] {
+				ourInputs = append(ourInputs, name)
+			}
+		}
+
+		if len(ourInputs) > 0 {
+			fmt.Printf("✅ Verified %d data inputs created by this code:\n", len(ourInputs))
+			for _, name := range ourInputs {
+				fmt.Printf("  - %s\n", name)
+			}
+		} else {
+			fmt.Println("⚠️  Warning: None of the configured data inputs were found in Splunk")
 		}
 	} else {
 		fmt.Printf("⚠️  Warning: Could not list data inputs: %v\n", err)

@@ -39,19 +39,12 @@ func NewSplunkService(config *utils.Config) (*SplunkService, error) {
 	return &SplunkService{
 		config:     config,
 		httpClient: httpClient,
-		authToken:  config.Splunk.AuthToken,
 	}, nil
 }
 
 // Authenticate authenticates with Splunk and obtains a session token
 func (s *SplunkService) Authenticate() error {
-	// If auth token is already provided, use it
-	if s.authToken != "" {
-		fmt.Println("Using provided auth token")
-		return nil
-	}
-
-	// Otherwise, create a session token using username/password
+	// Create a session token using username/password
 	ctx := context.Background()
 
 	formData := map[string]string{
@@ -69,7 +62,9 @@ func (s *SplunkService) Authenticate() error {
 		return fmt.Errorf("authentication failed with status %d: %s", resp.StatusCode, resp.String())
 	}
 
+	// Parse response to extract session key
 	var authResp models.AuthResponse
+
 	if err := resp.JSON(&authResp); err != nil {
 		return fmt.Errorf("failed to parse auth response: %w", err)
 	}
@@ -162,17 +157,9 @@ func (s *SplunkService) CreateSalesforceAccount() error {
 		"output_mode":      "json",
 	}
 
-	// Add auth-specific parameters
-	if s.config.Salesforce.AuthType == "oauth_client_credentials" {
-		formData["client_id_oauth_credentials"] = s.config.Salesforce.ClientID
-		formData["client_secret_oauth_credentials"] = s.config.Salesforce.ClientSecret
-	} else {
-		formData["username"] = s.config.Salesforce.Username
-		formData["password"] = s.config.Salesforce.Password
-		if s.config.Salesforce.SecurityToken != "" {
-			formData["token"] = s.config.Salesforce.SecurityToken
-		}
-	}
+	// Add OAuth client credentials
+	formData["client_id_oauth_credentials"] = s.config.Salesforce.ClientID
+	formData["client_secret_oauth_credentials"] = s.config.Salesforce.ClientSecret
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
