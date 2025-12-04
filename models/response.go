@@ -1,11 +1,6 @@
 // Package models contains request/response data structures
 package models
 
-// AuthResponse represents a Splunk authentication response
-type AuthResponse struct {
-	SessionKey string `json:"sessionKey"`
-}
-
 // SplunkResponse represents a generic Splunk API response
 type SplunkResponse struct {
 	Links    map[string]string `json:"links"`
@@ -37,9 +32,4 @@ type Paging struct {
 type Message struct {
 	Type string `json:"type"`
 	Text string `json:"text"`
-}
-
-// ErrorResponse represents an error response from Splunk
-type ErrorResponse struct {
-	Messages []Message `json:"messages"`
 }

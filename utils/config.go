@@ -14,7 +14,6 @@ import (
 
 // Config holds the complete application configuration
 type Config struct {
-	AppPort    string                 `env:"APP_PORT"`
 	Splunk     SplunkConfig           `env:"SPLUNK"`
 	Salesforce SalesforceConfig       `env:"SALESFORCE"`
 	Migration  MigrationConfig        `env:"MIGRATION"`
@@ -26,7 +25,6 @@ type SplunkConfig struct {
 	URL            string `env:"SPLUNK_URL"`
 	Username       string `env:"SPLUNK_USERNAME"`
 	Password       string `env:"SPLUNK_PASSWORD"`
-	AuthToken      string `env:"SPLUNK_AUTH_TOKEN"`
 	SkipSSLVerify  bool   `env:"SPLUNK_SKIP_SSL_VERIFY"`
 	DefaultIndex   string `env:"SPLUNK_DEFAULT_INDEX"`
 	IndexName      string `env:"SPLUNK_INDEX_NAME"`
@@ -37,15 +35,12 @@ type SplunkConfig struct {
 
 // SalesforceConfig holds Salesforce-specific configuration
 type SalesforceConfig struct {
-	Endpoint      string `env:"SALESFORCE_ENDPOINT"`
-	Username      string `env:"SALESFORCE_USERNAME"`
-	Password      string `env:"SALESFORCE_PASSWORD"`
-	SecurityToken string `env:"SALESFORCE_SECURITY_TOKEN"`
-	APIVersion    string `env:"SALESFORCE_API_VERSION"`
-	AuthType      string `env:"SALESFORCE_AUTH_TYPE"`
-	ClientID      string `env:"SALESFORCE_CLIENT_ID"`
-	ClientSecret  string `env:"SALESFORCE_CLIENT_SECRET"`
-	AccountName   string `env:"SALESFORCE_ACCOUNT_NAME"`
+	Endpoint     string `env:"SALESFORCE_ENDPOINT"`
+	APIVersion   string `env:"SALESFORCE_API_VERSION"`
+	AuthType     string `env:"SALESFORCE_AUTH_TYPE"`
+	ClientID     string `env:"SALESFORCE_CLIENT_ID"`
+	ClientSecret string `env:"SALESFORCE_CLIENT_SECRET"`
+	AccountName  string `env:"SALESFORCE_ACCOUNT_NAME"`
 }
 
 // MigrationConfig holds migration-specific settings
@@ -116,9 +111,6 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 
 	// Set defaults
-	if config.AppPort == "" {
-		config.AppPort = "8080"
-	}
 	if config.Splunk.DefaultIndex == "" {
 		config.Splunk.DefaultIndex = "salesforce_testing"
 	}
@@ -315,15 +307,6 @@ func strToBool(f reflect.Type, t reflect.Type, data interface{}) (interface{}, e
 	return strconv.ParseBool(s)
 }
 
-// GetExtension safely retrieves an extension value
-func (c *Config) GetExtension(key string) (interface{}, bool) {
-	if c.Extensions == nil {
-		return nil, false
-	}
-	val, exists := c.Extensions[key]
-	return val, exists
-}
-
 // SetExtension safely sets an extension value
 func (c *Config) SetExtension(key string, value interface{}) {
 	if c.Extensions == nil {
@@ -334,7 +317,7 @@ func (c *Config) SetExtension(key string, value interface{}) {
 
 // GetDataInputs retrieves and parses DATA_INPUTS from extensions
 func (c *Config) GetDataInputs() ([]DataInput, error) {
-	dataInputsRaw, exists := c.GetExtension("DATA_INPUTS")
+	dataInputsRaw, exists := c.Extensions["DATA_INPUTS"]
 	if !exists {
 		return nil, fmt.Errorf("DATA_INPUTS not found in configuration")
 	}
@@ -406,16 +389,19 @@ func (c *Config) Validate() error {
 	if c.Splunk.URL == "" {
 		return fmt.Errorf("SPLUNK_URL is required")
 	}
-	if c.Splunk.AuthToken == "" && (c.Splunk.Username == "" || c.Splunk.Password == "") {
-		return fmt.Errorf("splunk authentication required: provide either SPLUNK_AUTH_TOKEN or SPLUNK_USERNAME+SPLUNK_PASSWORD")
+	if c.Splunk.Username == "" || c.Splunk.Password == "" {
+		return fmt.Errorf("splunk authentication required: provide SPLUNK_USERNAME and SPLUNK_PASSWORD")
 	}
 
 	// Validate Salesforce configuration
-	if c.Salesforce.Username == "" {
-		return fmt.Errorf("SALESFORCE_USERNAME is required")
+	if c.Salesforce.Endpoint == "" {
+		return fmt.Errorf("SALESFORCE_ENDPOINT is required")
 	}
-	if c.Salesforce.Password == "" {
-		return fmt.Errorf("SALESFORCE_PASSWORD is required")
+	if c.Salesforce.ClientID == "" {
+		return fmt.Errorf("SALESFORCE_CLIENT_ID is required")
+	}
+	if c.Salesforce.ClientSecret == "" {
+		return fmt.Errorf("SALESFORCE_CLIENT_SECRET is required")
 	}
 	if c.Salesforce.AccountName == "" {
 		return fmt.Errorf("SALESFORCE_ACCOUNT_NAME is required")
