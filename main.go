@@ -1,1 +1,16 @@
-// minimal main() which will call cmd.Execute()
+// Package main is the entry point for the Salesforce to Splunk migration application
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"salesforce-splunk-migration/cmd"
+)
+
+func main() {
+	if err := cmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+}
