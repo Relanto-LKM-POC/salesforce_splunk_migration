@@ -6,8 +6,8 @@ import (
 	"errors"
 	"testing"
 
+	"salesforce-splunk-migration/mocks"
 	"salesforce-splunk-migration/utils"
-	"salesforce-splunk-migration/utils/mocks"
 )
 
 func TestMockHTTPClient_Get(t *testing.T) {

@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"salesforce-splunk-migration/mocks"
 	"salesforce-splunk-migration/models"
 	"salesforce-splunk-migration/services"
 	"salesforce-splunk-migration/utils"
-	utilsmocks "salesforce-splunk-migration/utils/mocks"
 )
 
 func TestNewSplunkService(t *testing.T) {
@@ -80,7 +80,7 @@ func TestNewSplunkService(t *testing.T) {
 
 func TestSplunkService_Authenticate(t *testing.T) {
 	t.Run("Success_ValidCredentials", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				authResp := models.AuthResponse{
 					SessionKey: "test-session-key-12345",
@@ -107,7 +107,7 @@ func TestSplunkService_Authenticate(t *testing.T) {
 	})
 
 	t.Run("Error_UnauthorizedCredentials", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 401,
@@ -130,7 +130,7 @@ func TestSplunkService_Authenticate(t *testing.T) {
 	})
 
 	t.Run("Error_NetworkError", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return nil, fmt.Errorf("network error")
 			},
@@ -150,7 +150,7 @@ func TestSplunkService_Authenticate(t *testing.T) {
 	})
 
 	t.Run("Error_InvalidJSON", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 200,
@@ -174,7 +174,7 @@ func TestSplunkService_Authenticate(t *testing.T) {
 
 func TestSplunkService_CreateIndex(t *testing.T) {
 	t.Run("Success_ValidIndexName", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 201,
@@ -191,7 +191,7 @@ func TestSplunkService_CreateIndex(t *testing.T) {
 	})
 
 	t.Run("Error_EmptyIndexName", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{}
+		mockClient := &mocks.MockHTTPClient{}
 		config := &utils.Config{}
 		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
 
@@ -201,7 +201,7 @@ func TestSplunkService_CreateIndex(t *testing.T) {
 	})
 
 	t.Run("Error_HTTPError", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 400,
@@ -218,7 +218,7 @@ func TestSplunkService_CreateIndex(t *testing.T) {
 	})
 
 	t.Run("Error_NetworkError", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return nil, fmt.Errorf("network error")
 			},
@@ -235,7 +235,7 @@ func TestSplunkService_CreateIndex(t *testing.T) {
 
 func TestSplunkService_CreateSalesforceAccount(t *testing.T) {
 	t.Run("Success_ValidConfiguration", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 201,
@@ -259,7 +259,7 @@ func TestSplunkService_CreateSalesforceAccount(t *testing.T) {
 	})
 
 	t.Run("Error_HTTPError", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 400,
@@ -280,7 +280,7 @@ func TestSplunkService_CreateSalesforceAccount(t *testing.T) {
 	})
 
 	t.Run("Error_NetworkError", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return nil, fmt.Errorf("network error")
 			},
@@ -301,7 +301,7 @@ func TestSplunkService_CreateSalesforceAccount(t *testing.T) {
 
 func TestSplunkService_CreateDataInput(t *testing.T) {
 	t.Run("Success_ValidInput", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 201,
@@ -330,7 +330,7 @@ func TestSplunkService_CreateDataInput(t *testing.T) {
 	})
 
 	t.Run("Error_NilInput", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{}
+		mockClient := &mocks.MockHTTPClient{}
 		config := &utils.Config{}
 		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
 
@@ -340,7 +340,7 @@ func TestSplunkService_CreateDataInput(t *testing.T) {
 	})
 
 	t.Run("Error_HTTPError", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 400,
@@ -366,7 +366,7 @@ func TestSplunkService_CreateDataInput(t *testing.T) {
 	})
 
 	t.Run("Error_NetworkError", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return nil, fmt.Errorf("network error")
 			},
@@ -392,7 +392,7 @@ func TestSplunkService_CreateDataInput(t *testing.T) {
 
 func TestSplunkService_ListDataInputs(t *testing.T) {
 	t.Run("Success_MultipleInputs", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
 				response := map[string]interface{}{
 					"entry": []interface{}{
@@ -419,7 +419,7 @@ func TestSplunkService_ListDataInputs(t *testing.T) {
 	})
 
 	t.Run("Success_EmptyList", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
 				response := map[string]interface{}{
 					"entry": []interface{}{},
@@ -441,7 +441,7 @@ func TestSplunkService_ListDataInputs(t *testing.T) {
 	})
 
 	t.Run("Error_InvalidJSON", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 200,
@@ -459,7 +459,7 @@ func TestSplunkService_ListDataInputs(t *testing.T) {
 	})
 
 	t.Run("Error_NetworkError", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return nil, fmt.Errorf("network error")
 			},
@@ -477,7 +477,7 @@ func TestSplunkService_ListDataInputs(t *testing.T) {
 
 func TestSplunkService_CheckSalesforceAddon(t *testing.T) {
 	t.Run("Success_AddonInstalled", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
 				response := map[string]interface{}{
 					"entry": []interface{}{
@@ -505,7 +505,7 @@ func TestSplunkService_CheckSalesforceAddon(t *testing.T) {
 	})
 
 	t.Run("Error_AddonNotFound", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
 				response := map[string]interface{}{
 					"entry": []interface{}{},
@@ -527,7 +527,7 @@ func TestSplunkService_CheckSalesforceAddon(t *testing.T) {
 	})
 
 	t.Run("Error_NetworkError", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return nil, fmt.Errorf("network error")
 			},
@@ -542,7 +542,7 @@ func TestSplunkService_CheckSalesforceAddon(t *testing.T) {
 	})
 
 	t.Run("Error_HTTPStatusError", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 500,
@@ -560,7 +560,7 @@ func TestSplunkService_CheckSalesforceAddon(t *testing.T) {
 	})
 
 	t.Run("Error_JSONParseError", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 200,
@@ -578,7 +578,7 @@ func TestSplunkService_CheckSalesforceAddon(t *testing.T) {
 	})
 
 	t.Run("Error_AddonDisabled", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
 				response := map[string]interface{}{
 					"entry": []interface{}{
@@ -611,7 +611,7 @@ func TestSplunkService_CheckSalesforceAddon(t *testing.T) {
 
 func TestSplunkService_CheckResponseMessages(t *testing.T) {
 	t.Run("Success_NoMessages", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				response := map[string]interface{}{
 					"entry": []interface{}{},
@@ -636,7 +636,7 @@ func TestSplunkService_CheckResponseMessages(t *testing.T) {
 	})
 
 	t.Run("Success_WithErrorMessageAlreadyExists", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				response := map[string]interface{}{
 					"messages": []interface{}{
@@ -666,7 +666,7 @@ func TestSplunkService_CheckResponseMessages(t *testing.T) {
 	})
 
 	t.Run("Success_InvalidJSONButSuccessStatus", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 200,
@@ -687,7 +687,7 @@ func TestSplunkService_CheckResponseMessages(t *testing.T) {
 	})
 
 	t.Run("Error_InvalidJSONAndFailureStatus", func(t *testing.T) {
-		mockClient := &utilsmocks.MockHTTPClient{
+		mockClient := &mocks.MockHTTPClient{
 			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
 				return &utils.HTTPResponse{
 					StatusCode: 500,

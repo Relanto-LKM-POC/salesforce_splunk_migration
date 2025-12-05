@@ -10,6 +10,15 @@ import (
 	"salesforce-splunk-migration/utils"
 )
 
+type SplunkServiceInterface interface {
+	Authenticate(ctx context.Context) error
+	CheckSalesforceAddon(ctx context.Context) error
+	CreateIndex(ctx context.Context, indexName string) error
+	CreateSalesforceAccount(ctx context.Context) error
+	CreateDataInput(ctx context.Context, input *utils.DataInput) error
+	ListDataInputs(ctx context.Context) ([]string, error)
+}
+
 // SplunkService handles all Splunk API operations
 type SplunkService struct {
 	config     *utils.Config

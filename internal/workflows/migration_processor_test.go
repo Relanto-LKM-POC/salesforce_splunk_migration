@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"salesforce-splunk-migration/internal/workflows"
-	"salesforce-splunk-migration/services/mocks"
+	"salesforce-splunk-migration/mocks"
 	"salesforce-splunk-migration/utils"
 
 	"github.com/flowgraph/flowgraph/pkg/flowgraph"
