@@ -1,4 +1,3 @@
-// Package main is the entry point for the Salesforce to Splunk migration application
 package main
 
 import (
