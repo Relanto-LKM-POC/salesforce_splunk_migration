@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"salesforce-splunk-migration/internal/state"
 	"salesforce-splunk-migration/services"
 	"salesforce-splunk-migration/utils"
 
@@ -17,10 +16,8 @@ import (
 // MigrationNodeProcessor is a custom FlowGraph node processor for migration nodes
 type MigrationNodeProcessor struct {
 	config        *utils.Config
-	splunkService *services.SplunkService
-	stateManager  *state.MigrationStateManager
+	splunkService services.SplunkServiceInterface
 	dataInputs    []utils.DataInput
-	inputProgress *state.DataInputProgress
 	successCount  int
 	failedCount   int
 	failedInputs  []string
@@ -29,12 +26,10 @@ type MigrationNodeProcessor struct {
 }
 
 // NewMigrationNodeProcessor creates a new migration node processor
-func NewMigrationNodeProcessor(config *utils.Config, splunkService *services.SplunkService) *MigrationNodeProcessor {
-	executionID := state.GenerateExecutionID()
+func NewMigrationNodeProcessor(config *utils.Config, splunkService services.SplunkServiceInterface) *MigrationNodeProcessor {
 	return &MigrationNodeProcessor{
 		config:        config,
 		splunkService: splunkService,
-		stateManager:  state.NewMigrationStateManager(executionID),
 		failedInputs:  make([]string, 0),
 		logger:        utils.GetLogger(),
 	}
@@ -91,15 +86,12 @@ func (p *MigrationNodeProcessor) CanProcess(nodeType flowgraph.NodeType) bool {
 // authenticateNode handles authentication with Splunk
 func (p *MigrationNodeProcessor) authenticateNode(ctx context.Context) error {
 	p.logger.Info("🔐 Node 1: Authenticating with Splunk...")
-	p.stateManager.StartStep("authenticate")
 
-	if err := p.splunkService.Authenticate(); err != nil {
-		p.stateManager.FailStep("authenticate", err)
+	if err := p.splunkService.Authenticate(ctx); err != nil {
 		p.logger.Error("Authentication failed", utils.Err(err))
 		return err
 	}
 
-	p.stateManager.CompleteStep("authenticate")
 	p.logger.Info("✅ Authentication successful")
 	return nil
 }
@@ -107,15 +99,12 @@ func (p *MigrationNodeProcessor) authenticateNode(ctx context.Context) error {
 // checkSalesforceAddonNode checks if Splunk Add-on for Salesforce is installed
 func (p *MigrationNodeProcessor) checkSalesforceAddonNode(ctx context.Context) error {
 	p.logger.Info("🔌 Node 2: Checking Splunk Add-on for Salesforce...")
-	p.stateManager.StartStep("check_salesforce_addon")
 
-	if err := p.splunkService.CheckSalesforceAddon(); err != nil {
-		p.stateManager.FailStep("check_salesforce_addon", err)
+	if err := p.splunkService.CheckSalesforceAddon(ctx); err != nil {
 		p.logger.Error("Splunk Add-on for Salesforce check failed", utils.Err(err))
 		return err
 	}
 
-	p.stateManager.CompleteStep("check_salesforce_addon")
 	p.logger.Info("✅ Splunk Add-on for Salesforce is installed and enabled")
 	return nil
 }
@@ -123,17 +112,14 @@ func (p *MigrationNodeProcessor) checkSalesforceAddonNode(ctx context.Context) e
 // createIndexNode handles index creation
 func (p *MigrationNodeProcessor) createIndexNode(ctx context.Context) error {
 	p.logger.Info("📊 Node 3: Creating Splunk index...")
-	p.stateManager.StartStep("create_index")
 
-	if err := p.splunkService.CreateIndex(p.config.Splunk.IndexName); err != nil {
-		p.stateManager.FailStep("create_index", err)
+	if err := p.splunkService.CreateIndex(ctx, p.config.Splunk.IndexName); err != nil {
 		p.logger.Error("Failed to create index",
 			utils.String("index_name", p.config.Splunk.IndexName),
 			utils.Err(err))
 		return err
 	}
 
-	p.stateManager.CompleteStep("create_index")
 	p.logger.Info("✅ Index created", utils.String("index_name", p.config.Splunk.IndexName))
 	return nil
 }
@@ -141,34 +127,25 @@ func (p *MigrationNodeProcessor) createIndexNode(ctx context.Context) error {
 // createAccountNode handles Salesforce account creation
 func (p *MigrationNodeProcessor) createAccountNode(ctx context.Context) error {
 	p.logger.Info("🔗 Node 4: Creating Salesforce account in Splunk...")
-	p.stateManager.StartStep("create_account")
 
-	if err := p.splunkService.CreateSalesforceAccount(); err != nil {
-		p.stateManager.FailStep("create_account", err)
+	if err := p.splunkService.CreateSalesforceAccount(ctx); err != nil {
 		p.logger.Error("Failed to create Salesforce account", utils.Err(err))
 		return err
 	}
 
-	p.stateManager.CompleteStep("create_account")
 	p.logger.Info("✅ Salesforce account created")
 	return nil
 }
 
 // loadDataInputsNode loads data inputs from configuration
 func (p *MigrationNodeProcessor) loadDataInputsNode(ctx context.Context) error {
-	p.stateManager.StartStep("load_data_inputs")
-
 	dataInputs, err := p.config.GetDataInputs()
 	if err != nil {
-		p.stateManager.FailStep("load_data_inputs", err)
 		p.logger.Error("Failed to load data inputs", utils.Err(err))
 		return err
 	}
 
 	p.dataInputs = dataInputs
-	p.inputProgress = state.NewDataInputProgress(dataInputs)
-	p.stateManager.SetStepMetadata("load_data_inputs", "total_inputs", len(dataInputs))
-	p.stateManager.CompleteStep("load_data_inputs")
 
 	p.logger.Info("📥 Node 5: Loaded data inputs for creation",
 		utils.Int("count", len(dataInputs)))
@@ -181,8 +158,6 @@ func (p *MigrationNodeProcessor) createDataInputsNode(ctx context.Context) error
 		p.logger.Warn("⚠️  No data inputs configured. Skipping...")
 		return nil
 	}
-
-	p.stateManager.StartStep("create_data_inputs")
 
 	maxParallelism := p.config.Migration.ConcurrentRequests
 	p.logger.Info("🔄 Node 6: Creating data inputs in parallel",
@@ -201,21 +176,17 @@ func (p *MigrationNodeProcessor) createDataInputsNode(ctx context.Context) error
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
-			p.inputProgress.StartInput(inp.Name)
-
-			if err := p.splunkService.CreateDataInput(&inp); err != nil {
+			if err := p.splunkService.CreateDataInput(ctx, &inp); err != nil {
 				p.logger.Error("Failed to create data input",
 					utils.String("name", inp.Name),
 					utils.String("object", inp.Object),
 					utils.Err(err))
 				p.incrementFailed(inp.Name)
-				p.inputProgress.FailInput(inp.Name, err)
 			} else {
 				p.logger.Info("Data input created successfully",
 					utils.String("name", inp.Name),
 					utils.String("object", inp.Object))
 				p.incrementSuccess()
-				p.inputProgress.CompleteInput(inp.Name)
 			}
 		}(i, input)
 	}
@@ -224,12 +195,6 @@ func (p *MigrationNodeProcessor) createDataInputsNode(ctx context.Context) error
 
 	duration := time.Since(startTime)
 	success, failed := p.getCounters()
-
-	p.stateManager.SetStepMetadata("create_data_inputs", "success_count", success)
-	p.stateManager.SetStepMetadata("create_data_inputs", "failed_count", failed)
-	p.stateManager.SetStepMetadata("create_data_inputs", "duration", duration)
-	p.stateManager.SetStepMetadata("create_data_inputs", "parallelism", maxParallelism)
-	p.stateManager.CompleteStep("create_data_inputs")
 
 	if failed > 0 {
 		p.logger.Warn("❌ Data inputs creation completed with errors",
@@ -249,12 +214,10 @@ func (p *MigrationNodeProcessor) createDataInputsNode(ctx context.Context) error
 // verifyInputsNode verifies created data inputs
 func (p *MigrationNodeProcessor) verifyInputsNode(ctx context.Context) error {
 	p.logger.Info("🔍 Node 7: Verifying created data inputs...")
-	p.stateManager.StartStep("verify_inputs")
 
-	existingInputs, err := p.splunkService.ListDataInputs()
+	existingInputs, err := p.splunkService.ListDataInputs(ctx)
 	if err != nil {
 		p.logger.Warn("Could not list data inputs", utils.Err(err))
-		p.stateManager.CompleteStep("verify_inputs")
 		return nil
 	}
 
@@ -280,7 +243,6 @@ func (p *MigrationNodeProcessor) verifyInputsNode(ctx context.Context) error {
 		p.logger.Warn("None of the configured data inputs were found in Splunk")
 	}
 
-	p.stateManager.CompleteStep("verify_inputs")
 	return nil
 }
 
@@ -302,11 +264,6 @@ func (p *MigrationNodeProcessor) getCounters() (success, failed int) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.successCount, p.failedCount
-}
-
-// GetStateManager returns the state manager for reporting
-func (p *MigrationNodeProcessor) GetStateManager() *state.MigrationStateManager {
-	return p.stateManager
 }
 
 // GetCounters returns the final counters

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"salesforce-splunk-migration/internal/workflows"
 	"salesforce-splunk-migration/services"
@@ -39,8 +40,10 @@ func Execute() error {
 		return fmt.Errorf("failed to create migration graph: %w", err)
 	}
 
-	// Execute the workflow with state management
-	ctx := context.Background()
+	// Execute the workflow with state management and timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
+
 	if err := migrationGraph.Execute(ctx); err != nil {
 		return fmt.Errorf("migration workflow failed: %w", err)
 	}

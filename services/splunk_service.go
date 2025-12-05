@@ -13,28 +13,35 @@ import (
 // SplunkService handles all Splunk API operations
 type SplunkService struct {
 	config     *utils.Config
-	httpClient *utils.HTTPClient
+	httpClient utils.HTTPClientInterface
 	authToken  string
 }
 
 // NewSplunkService creates a new Splunk service instance with connection pooling
 func NewSplunkService(config *utils.Config) (*SplunkService, error) {
-	// Create HTTP client with connection pooling and retry configuration
-	httpClient := utils.NewHTTPClient(utils.HTTPClientConfig{
-		BaseURL: config.Splunk.URL,
-		Timeout: time.Duration(config.Splunk.RequestTimeout) * time.Second,
-		Headers: map[string]string{
-			"User-Agent": "Salesforce-Splunk-Migration/1.0",
-		},
-		RetryConfig: utils.RetryConfig{
-			MaxRetries: config.Splunk.MaxRetries,
-			RetryDelay: time.Duration(config.Splunk.RetryDelay) * time.Second,
-			BackoffExp: 2.0,
-		},
-		SkipSSLVerify:   config.Splunk.SkipSSLVerify,
-		MaxIdleConns:    100,
-		MaxConnsPerHost: 100,
-	})
+	return NewSplunkServiceWithClient(config, nil)
+}
+
+// NewSplunkServiceWithClient creates a new Splunk service with custom HTTP client (for testing)
+func NewSplunkServiceWithClient(config *utils.Config, httpClient utils.HTTPClientInterface) (*SplunkService, error) {
+	if httpClient == nil {
+		// Create HTTP client with connection pooling and retry configuration
+		httpClient = utils.NewHTTPClient(utils.HTTPClientConfig{
+			BaseURL: config.Splunk.URL,
+			Timeout: time.Duration(config.Splunk.RequestTimeout) * time.Second,
+			Headers: map[string]string{
+				"User-Agent": "Salesforce-Splunk-Migration/1.0",
+			},
+			RetryConfig: utils.RetryConfig{
+				MaxRetries: config.Splunk.MaxRetries,
+				RetryDelay: time.Duration(config.Splunk.RetryDelay) * time.Second,
+				BackoffExp: 2.0,
+			},
+			SkipSSLVerify:   config.Splunk.SkipSSLVerify,
+			MaxIdleConns:    100,
+			MaxConnsPerHost: 100,
+		})
+	}
 
 	return &SplunkService{
 		config:     config,
@@ -43,9 +50,9 @@ func NewSplunkService(config *utils.Config) (*SplunkService, error) {
 }
 
 // Authenticate authenticates with Splunk and obtains a session token
-func (s *SplunkService) Authenticate() error {
-	// Create a session token using username/password
-	ctx := context.Background()
+func (s *SplunkService) Authenticate(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
 	formData := map[string]string{
 		"username":    s.config.Splunk.Username,
@@ -74,12 +81,14 @@ func (s *SplunkService) Authenticate() error {
 }
 
 // CheckSalesforceAddon checks if Splunk Add-on for Salesforce is installed
-func (s *SplunkService) CheckSalesforceAddon() error {
+func (s *SplunkService) CheckSalesforceAddon(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
 	}
 
-	ctx := context.Background()
 	// List all installed apps
 	resp, err := s.httpClient.Get(ctx, "/services/apps/local?output_mode=json", headers)
 	if err != nil {
@@ -119,7 +128,14 @@ func (s *SplunkService) CheckSalesforceAddon() error {
 }
 
 // CreateIndex creates a new Splunk index
-func (s *SplunkService) CreateIndex(indexName string) error {
+func (s *SplunkService) CreateIndex(ctx context.Context, indexName string) error {
+	if indexName == "" {
+		return fmt.Errorf("index name cannot be empty")
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	formData := map[string]string{
 		"name":        indexName,
 		"datatype":    "event",
@@ -130,7 +146,6 @@ func (s *SplunkService) CreateIndex(indexName string) error {
 		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
 	}
 
-	ctx := context.Background()
 	resp, err := s.httpClient.PostForm(ctx, "/services/data/indexes", formData, headers)
 	if err != nil {
 		return fmt.Errorf("failed to create index: %w", err)
@@ -144,56 +159,11 @@ func (s *SplunkService) CreateIndex(indexName string) error {
 	return s.checkResponseMessages(resp)
 }
 
-// VerifyIndexExists checks if the specified index exists in Splunk
-func (s *SplunkService) VerifyIndexExists(indexName string) error {
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
-	}
-
-	ctx := context.Background()
-	path := fmt.Sprintf("/services/data/indexes/%s?output_mode=json", indexName)
-	resp, err := s.httpClient.Get(ctx, path, headers)
-	if err != nil {
-		return fmt.Errorf("failed to verify index: %w", err)
-	}
-
-	if resp.StatusCode == 404 {
-		return fmt.Errorf("index '%s' does not exist", indexName)
-	}
-
-	if !resp.IsSuccess() {
-		return fmt.Errorf("failed to verify index: status %d - %s", resp.StatusCode, resp.String())
-	}
-
-	return nil
-}
-
-// VerifyAccountExists checks if the specified Salesforce account exists in Splunk
-func (s *SplunkService) VerifyAccountExists(accountName string) error {
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
-	}
-
-	ctx := context.Background()
-	path := fmt.Sprintf("/servicesNS/-/Splunk_TA_salesforce/configs/conf-sfdc_connection/%s?output_mode=json", accountName)
-	resp, err := s.httpClient.Get(ctx, path, headers)
-	if err != nil {
-		return fmt.Errorf("failed to verify account: %w", err)
-	}
-
-	if resp.StatusCode == 404 {
-		return fmt.Errorf("salesforce account '%s' does not exist", accountName)
-	}
-
-	if !resp.IsSuccess() {
-		return fmt.Errorf("failed to verify account: status %d - %s", resp.StatusCode, resp.String())
-	}
-
-	return nil
-}
-
 // CreateSalesforceAccount creates a Salesforce account in Splunk
-func (s *SplunkService) CreateSalesforceAccount() error {
+func (s *SplunkService) CreateSalesforceAccount(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	formData := map[string]string{
 		"name":             s.config.Salesforce.AccountName,
 		"endpoint":         s.config.Salesforce.Endpoint,
@@ -210,7 +180,6 @@ func (s *SplunkService) CreateSalesforceAccount() error {
 		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
 	}
 
-	ctx := context.Background()
 	resp, err := s.httpClient.PostForm(ctx, "/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_account", formData, headers)
 	if err != nil {
 		return fmt.Errorf("failed to create Salesforce account: %w", err)
@@ -226,7 +195,14 @@ func (s *SplunkService) CreateSalesforceAccount() error {
 }
 
 // CreateDataInput creates a Salesforce object data input in Splunk
-func (s *SplunkService) CreateDataInput(input *utils.DataInput) error {
+func (s *SplunkService) CreateDataInput(ctx context.Context, input *utils.DataInput) error {
+	if input == nil {
+		return fmt.Errorf("data input cannot be nil")
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	formData := map[string]string{
 		"name":          input.Name,
 		"account":       s.config.Salesforce.AccountName,
@@ -249,7 +225,6 @@ func (s *SplunkService) CreateDataInput(input *utils.DataInput) error {
 		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
 	}
 
-	ctx := context.Background()
 	resp, err := s.httpClient.PostForm(ctx, "/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object", formData, headers)
 	if err != nil {
 		return fmt.Errorf("failed to create data input: %w", err)
@@ -288,12 +263,14 @@ func (s *SplunkService) checkResponseMessages(resp *utils.HTTPResponse) error {
 }
 
 // ListDataInputs lists all existing Salesforce object data inputs
-func (s *SplunkService) ListDataInputs() ([]string, error) {
+func (s *SplunkService) ListDataInputs(ctx context.Context) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
 	}
 
-	ctx := context.Background()
 	resp, err := s.httpClient.Get(ctx, "/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object?output_mode=json", headers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list data inputs: %w", err)
@@ -319,24 +296,4 @@ func (s *SplunkService) ListDataInputs() ([]string, error) {
 	}
 
 	return names, nil
-}
-
-// DeleteDataInput deletes a Salesforce object data input
-func (s *SplunkService) DeleteDataInput(name string) error {
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
-	}
-
-	ctx := context.Background()
-	path := fmt.Sprintf("/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object/%s", name)
-	resp, err := s.httpClient.Delete(ctx, path, headers)
-	if err != nil {
-		return fmt.Errorf("failed to delete data input: %w", err)
-	}
-
-	if !resp.IsSuccess() {
-		return fmt.Errorf("failed to delete data input: status %d - %s", resp.StatusCode, resp.String())
-	}
-
-	return nil
 }

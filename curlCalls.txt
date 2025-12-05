@@ -28,3 +28,13 @@ To create data input in splunk add-on for salesforce object:
 100  1784  100  1559  100   225     94     13  0:00:17  0:00:16  0:00:01   371{"links":{"create":"/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object/_new"},"origin":"https://localhost:8089/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object","updated":"2025-12-03T17:45:53+05:30","generator":{"build":"e2d18b4767e9","version":"10.0.2"},"entry":[{"name":"my_custom_object","id":"https://localhost:8089/servicesNS/nobody/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object/my_custom_object","updated":"1970-01-01T05:30:00+05:30","links":{"alternate":"/servicesNS/nobody/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object/my_custom_object","list":"/servicesNS/nobody/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object/my_custom_object","edit":"/servicesNS/nobody/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object/my_custom_object","remove":"/servicesNS/nobody/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object/my_custom_object"},"author":"nobody","acl":{"app":"Splunk_TA_salesforce","can_list":true,"can_write":true,"modifiable":false,"owner":"nobody","perms":{"read":[],"write":[]},"removable":true,"sharing":"app"},"content":{"account":"salesforce_UAT_oauth","delay":"60","disabled":false,"eai:acl":null,"host":"$decideOnStartup","host_resolved":"DESKTOP-FRSRLVP","index":"salesforce_testing","interval":"300","object":"Account","object_fields":"Id,Name,CreatedDate,LastModifiedDate","order_by":"LastModifiedDate","python.version":null,"sourcetype":"sfdc:object","start_by_shell":"false","start_date":"2024-01-01T00:00:00.000Z"}}],"paging":{"total":1,"perPage":30,"offset":0},"messages":[]}
 
 
+
+
+
+go tool cover -func coverage.out
+go tool cover -html coverage.out -o coverage.html
+
+
+Works for overall coverage:
+go test ./... -coverprofile coverage.out
+go tool cover -func="coverage.out"

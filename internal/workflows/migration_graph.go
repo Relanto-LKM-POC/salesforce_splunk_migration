@@ -23,7 +23,7 @@ type MigrationGraph struct {
 }
 
 // NewMigrationGraph creates a new FlowGraph-based migration workflow
-func NewMigrationGraph(config *utils.Config, splunkService *services.SplunkService) (*MigrationGraph, error) {
+func NewMigrationGraph(config *utils.Config, splunkService services.SplunkServiceInterface) (*MigrationGraph, error) {
 	// Create custom node processor for migration nodes
 	processor := NewMigrationNodeProcessor(config, splunkService)
 
@@ -146,12 +146,10 @@ func (mg *MigrationGraph) Execute(ctx context.Context) error {
 	mg.logger.Info("🚀 Starting Salesforce to Splunk Migration with FlowGraph...")
 
 	mg.startTime = time.Now()
-	mg.processor.GetStateManager().StartExecution()
 
 	defer func() {
 		if r := recover(); r != nil {
 			mg.logger.Error("Panic occurred during migration", utils.String("panic", fmt.Sprintf("%v", r)))
-			mg.processor.GetStateManager().FailExecution(fmt.Errorf("panic: %v", r))
 			panic(r)
 		}
 	}()
@@ -171,19 +169,12 @@ func (mg *MigrationGraph) Execute(ctx context.Context) error {
 
 	response, err := mg.runtime.Execute(ctx, req)
 	if err != nil {
-		mg.processor.GetStateManager().FailExecution(err)
 		mg.logger.Error("Migration execution failed", utils.Err(err))
 		return err
 	}
 
 	mg.endTime = time.Now()
 	duration := mg.endTime.Sub(mg.startTime)
-
-	mg.processor.GetStateManager().CompleteExecution()
-	mg.processor.GetStateManager().SetMetadata("total_duration", duration)
-
-	// Print execution summary
-	mg.processor.GetStateManager().PrintSummary()
 
 	if response.Status == "completed" {
 		mg.logger.Info("🎉 Migration completed successfully",

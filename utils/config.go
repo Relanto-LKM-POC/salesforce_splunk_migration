@@ -67,18 +67,31 @@ type Loader struct {
 	values map[string]string
 }
 
+// SetValue sets a value in the loader (for testing)
+func (l *Loader) SetValue(key, value string) {
+	if l.values == nil {
+		l.values = make(map[string]string)
+	}
+	l.values[key] = value
+}
+
+// GetValues returns all values (for testing)
+func (l *Loader) GetValues() map[string]string {
+	return l.values
+}
+
 // Load populates a struct from the loaded values
 func (l *Loader) Load(structPtr interface{}) error {
 	val := reflect.ValueOf(structPtr)
 	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Struct {
 		return fmt.Errorf("input must be a pointer to a struct")
 	}
-	dataMap := buildMap(val.Elem().Type(), l.values)
+	dataMap := BuildMap(val.Elem().Type(), l.values)
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Result: structPtr,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			strToNumeric,
-			strToBool,
+			StrToNumeric,
+			StrToBool,
 		),
 	})
 	if err != nil {
@@ -97,7 +110,7 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 
 	// Create loader
-	loader, err := createLoader(filePath)
+	loader, err := CreateLoader(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -143,15 +156,15 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 
 	// Load extensions (DATA_INPUTS, etc.)
-	if err := loadExtensions(filePath, config); err != nil {
+	if err := LoadExtensions(filePath, config); err != nil {
 		return nil, err
 	}
 
 	return config, nil
 }
 
-// createLoader creates a new loader from file and environment
-func createLoader(credentialsPath string) (*Loader, error) {
+// CreateLoader creates a new loader from file and environment
+func CreateLoader(credentialsPath string) (*Loader, error) {
 	values := make(map[string]string)
 
 	// Load from file
@@ -193,8 +206,8 @@ func createLoader(credentialsPath string) (*Loader, error) {
 	return &Loader{values: values}, nil
 }
 
-// loadExtensions loads dynamic configuration like DATA_INPUTS into Extensions map
-func loadExtensions(filePath string, config *Config) error {
+// LoadExtensions loads dynamic configuration like DATA_INPUTS into Extensions map
+func LoadExtensions(filePath string, config *Config) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read config file for extensions: %w", err)
@@ -213,7 +226,7 @@ func loadExtensions(filePath string, config *Config) error {
 	// Load any other dynamic extensions as needed
 	for key, value := range rawConfig {
 		// Skip known structured fields
-		if !isStructuredField(key) {
+		if !IsStructuredField(key) {
 			config.Extensions[key] = value
 		}
 	}
@@ -221,8 +234,8 @@ func loadExtensions(filePath string, config *Config) error {
 	return nil
 }
 
-// isStructuredField checks if a key belongs to structured config
-func isStructuredField(key string) bool {
+// IsStructuredField checks if a key belongs to structured config
+func IsStructuredField(key string) bool {
 	structuredPrefixes := []string{
 		"APP_",
 		"SPLUNK_",
@@ -237,13 +250,13 @@ func isStructuredField(key string) bool {
 	return false
 }
 
-// buildMap recursively builds a map for mapstructure from struct tags
-func buildMap(structType reflect.Type, values map[string]string) map[string]interface{} {
+// BuildMap recursively builds a map for mapstructure from struct tags
+func BuildMap(structType reflect.Type, values map[string]string) map[string]interface{} {
 	dataMap := make(map[string]interface{})
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
 		if field.Type.Kind() == reflect.Struct {
-			nestedMap := buildMap(field.Type, values)
+			nestedMap := BuildMap(field.Type, values)
 			if len(nestedMap) > 0 {
 				dataMap[field.Name] = nestedMap
 			}
@@ -260,8 +273,8 @@ func buildMap(structType reflect.Type, values map[string]string) map[string]inte
 	return dataMap
 }
 
-// strToNumeric converts string to numeric types
-func strToNumeric(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+// StrToNumeric converts string to numeric types
+func StrToNumeric(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
 	if f.Kind() != reflect.String {
 		return data, nil
 	}
@@ -293,8 +306,8 @@ func strToNumeric(f reflect.Type, t reflect.Type, data interface{}) (interface{}
 	return data, nil
 }
 
-// strToBool converts string to bool
-func strToBool(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+// StrToBool converts string to bool
+func StrToBool(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
 	if f.Kind() != reflect.String || t.Kind() != reflect.Bool {
 		return data, nil
 	}

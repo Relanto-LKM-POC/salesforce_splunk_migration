@@ -13,6 +13,15 @@ import (
 	"time"
 )
 
+// HTTPClientInterface defines the interface for HTTP client operations
+type HTTPClientInterface interface {
+	Get(ctx context.Context, path string, headers map[string]string) (*HTTPResponse, error)
+	Post(ctx context.Context, path string, body interface{}, headers map[string]string) (*HTTPResponse, error)
+	PostForm(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*HTTPResponse, error)
+	Put(ctx context.Context, path string, body interface{}, headers map[string]string) (*HTTPResponse, error)
+	Delete(ctx context.Context, path string, headers map[string]string) (*HTTPResponse, error)
+}
+
 // HTTPClient provides a wrapper around http.Client with additional utilities
 type HTTPClient struct {
 	client      *http.Client
