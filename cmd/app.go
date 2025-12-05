@@ -3,20 +3,19 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"salesforce-splunk-migration/internal/workflows"
 	"salesforce-splunk-migration/services"
 	"salesforce-splunk-migration/utils"
 )
 
-const VAULT_PATH = "credentials.json"
-
 // Execute runs the main migration workflow using FlowGraph orchestration
 func Execute() error {
 	logger := utils.GetLogger()
 
 	// Load configuration
-	config, err := utils.LoadConfig(VAULT_PATH)
+	config, err := utils.LoadConfig(os.Getenv("VAULT_PATH"))
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
