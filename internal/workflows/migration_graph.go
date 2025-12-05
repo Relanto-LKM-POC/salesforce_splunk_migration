@@ -19,11 +19,12 @@ type MigrationGraph struct {
 	processor *MigrationNodeProcessor
 	startTime time.Time
 	endTime   time.Time
+	logger    utils.Logger
 }
 
 // NewMigrationGraph creates a new FlowGraph-based migration workflow
 func NewMigrationGraph(config *utils.Config, splunkService *services.SplunkService) (*MigrationGraph, error) {
-	// Create custom node processor for migration steps
+	// Create custom node processor for migration nodes
 	processor := NewMigrationNodeProcessor(config, splunkService)
 
 	// Create FlowGraph runtime with custom processor
@@ -32,19 +33,20 @@ func NewMigrationGraph(config *utils.Config, splunkService *services.SplunkServi
 	// Build the migration graph
 	migrationGraph, err := buildMigrationGraph()
 	if err != nil {
-		return nil, fmt.Errorf("failed to build migration graph: %w", err)
+		return nil, err
 	}
 
 	// Save graph to runtime
 	ctx := context.Background()
 	if err := runtime.SaveGraph(ctx, migrationGraph); err != nil {
-		return nil, fmt.Errorf("failed to save graph: %w", err)
+		return nil, err
 	}
 
 	return &MigrationGraph{
 		runtime:   runtime,
 		graph:     migrationGraph,
 		processor: processor,
+		logger:    utils.GetLogger(),
 	}, nil
 }
 
@@ -64,6 +66,13 @@ func buildMigrationGraph() (*flowgraph.Graph, error) {
 		{
 			ID:        "authenticate",
 			Name:      "Authenticate with Splunk",
+			Type:      flowgraph.NodeTypeFunction,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		{
+			ID:        "check_salesforce_addon",
+			Name:      "Check Splunk Add-on for Salesforce",
 			Type:      flowgraph.NodeTypeFunction,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -108,13 +117,14 @@ func buildMigrationGraph() (*flowgraph.Graph, error) {
 	// Add nodes to graph
 	for _, node := range nodes {
 		if err := g.AddNode(node); err != nil {
-			return nil, fmt.Errorf("failed to add node %s: %w", node.ID, err)
+			return nil, err
 		}
 	}
 
 	// Define edges (sequential workflow)
 	edges := []*flowgraph.Edge{
-		{Source: "authenticate", Target: "create_index"},
+		{Source: "authenticate", Target: "check_salesforce_addon"},
+		{Source: "check_salesforce_addon", Target: "create_index"},
 		{Source: "create_index", Target: "create_account"},
 		{Source: "create_account", Target: "load_data_inputs"},
 		{Source: "load_data_inputs", Target: "create_data_inputs"},
@@ -124,7 +134,7 @@ func buildMigrationGraph() (*flowgraph.Graph, error) {
 	// Add edges to graph
 	for _, edge := range edges {
 		if err := g.AddEdge(edge); err != nil {
-			return nil, fmt.Errorf("failed to add edge %s->%s: %w", edge.Source, edge.Target, err)
+			return nil, err
 		}
 	}
 
@@ -133,13 +143,14 @@ func buildMigrationGraph() (*flowgraph.Graph, error) {
 
 // Execute runs the migration workflow using FlowGraph
 func (mg *MigrationGraph) Execute(ctx context.Context) error {
-	fmt.Println("🚀 Starting Salesforce to Splunk Migration with FlowGraph...")
+	mg.logger.Info("🚀 Starting Salesforce to Splunk Migration with FlowGraph...")
 
 	mg.startTime = time.Now()
 	mg.processor.GetStateManager().StartExecution()
 
 	defer func() {
 		if r := recover(); r != nil {
+			mg.logger.Error("Panic occurred during migration", utils.String("panic", fmt.Sprintf("%v", r)))
 			mg.processor.GetStateManager().FailExecution(fmt.Errorf("panic: %v", r))
 			panic(r)
 		}
@@ -161,7 +172,8 @@ func (mg *MigrationGraph) Execute(ctx context.Context) error {
 	response, err := mg.runtime.Execute(ctx, req)
 	if err != nil {
 		mg.processor.GetStateManager().FailExecution(err)
-		return fmt.Errorf("migration execution failed: %w", err)
+		mg.logger.Error("Migration execution failed", utils.Err(err))
+		return err
 	}
 
 	mg.endTime = time.Now()
@@ -173,12 +185,13 @@ func (mg *MigrationGraph) Execute(ctx context.Context) error {
 	// Print execution summary
 	mg.processor.GetStateManager().PrintSummary()
 
-	fmt.Printf("\n⏱️  Total migration time: %v\n", duration.Round(time.Millisecond))
-
 	if response.Status == "completed" {
-		fmt.Println("\n🎉 Migration completed successfully!")
+		mg.logger.Info("🎉 Migration completed successfully",
+			utils.Duration("total_time", duration))
 	} else {
-		fmt.Printf("\n⚠️  Migration ended with status: %s\n", response.Status)
+		mg.logger.Warn("Migration ended with non-completed status",
+			utils.String("status", string(response.Status)),
+			utils.Duration("total_time", duration))
 	}
 
 	return nil

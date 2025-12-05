@@ -73,6 +73,51 @@ func (s *SplunkService) Authenticate() error {
 	return nil
 }
 
+// CheckSalesforceAddon checks if Splunk Add-on for Salesforce is installed
+func (s *SplunkService) CheckSalesforceAddon() error {
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
+	}
+
+	ctx := context.Background()
+	// List all installed apps
+	resp, err := s.httpClient.Get(ctx, "/services/apps/local?output_mode=json", headers)
+	if err != nil {
+		return fmt.Errorf("failed to list installed apps: %w", err)
+	}
+
+	if !resp.IsSuccess() {
+		return fmt.Errorf("failed to list installed apps: status %d - %s", resp.StatusCode, resp.String())
+	}
+
+	var result struct {
+		Entry []struct {
+			Name    string `json:"name"`
+			Content struct {
+				Label    string `json:"label"`
+				Version  string `json:"version"`
+				Disabled bool   `json:"disabled"`
+			} `json:"content"`
+		} `json:"entry"`
+	}
+
+	if err := resp.JSON(&result); err != nil {
+		return fmt.Errorf("failed to parse apps list: %w", err)
+	}
+
+	// Check if Splunk_TA_salesforce is installed and enabled
+	for _, entry := range result.Entry {
+		if entry.Name == "Splunk_TA_salesforce" {
+			if entry.Content.Disabled {
+				return fmt.Errorf("Splunk Add-on for Salesforce is installed but disabled (version: %s)", entry.Content.Version)
+			}
+			return nil // App found and enabled
+		}
+	}
+
+	return fmt.Errorf("Splunk Add-on for Salesforce (Splunk_TA_salesforce) is not installed. Please install it from Splunkbase before proceeding")
+}
+
 // CreateIndex creates a new Splunk index
 func (s *SplunkService) CreateIndex(indexName string) error {
 	formData := map[string]string{

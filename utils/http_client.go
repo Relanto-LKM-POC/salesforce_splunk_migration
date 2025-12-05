@@ -20,6 +20,7 @@ type HTTPClient struct {
 	headers     map[string]string
 	timeout     time.Duration
 	retryConfig RetryConfig
+	logger      Logger
 }
 
 // HTTPClientConfig holds configuration for HTTP client
@@ -104,6 +105,7 @@ func NewHTTPClient(config HTTPClientConfig) *HTTPClient {
 		headers:     config.Headers,
 		timeout:     config.Timeout,
 		retryConfig: config.RetryConfig,
+		logger:      GetLogger(),
 	}
 }
 
@@ -187,7 +189,10 @@ func (hc *HTTPClient) executeWithRetry(ctx context.Context, method, url string, 
 			delay := time.Duration(float64(hc.retryConfig.RetryDelay) *
 				pow(hc.retryConfig.BackoffExp, float64(attempt-1)))
 
-			fmt.Printf("Retry attempt %d/%d after %v delay...\n", attempt+1, hc.retryConfig.MaxRetries, delay)
+			hc.logger.Info("Retrying HTTP request",
+				Int("attempt", attempt+1),
+				Int("max_retries", hc.retryConfig.MaxRetries),
+				Duration("delay", delay))
 
 			select {
 			case <-ctx.Done():
@@ -259,7 +264,8 @@ func (hc *HTTPClient) executeWithRetry(ctx context.Context, method, url string, 
 		// Handle specific error codes
 		if resp.StatusCode == 409 {
 			// Conflict - resource already exists
-			fmt.Printf("Resource already exists (409): %s\n", string(responseBody))
+			hc.logger.Info("Resource already exists (409)",
+				String("response", string(responseBody)))
 			return response, nil
 		}
 
@@ -267,7 +273,8 @@ func (hc *HTTPClient) executeWithRetry(ctx context.Context, method, url string, 
 		if resp.StatusCode == 500 {
 			bodyStr := string(responseBody)
 			if bytes.Contains(responseBody, []byte("already in use")) || bytes.Contains(responseBody, []byte("already exists")) {
-				fmt.Printf("Resource already exists (500): %s\n", bodyStr)
+				hc.logger.Info("Resource already exists (500)",
+					String("response", bodyStr))
 				return response, nil
 			}
 		}

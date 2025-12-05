@@ -7,6 +7,7 @@ toolchain go1.24.11
 require (
 	github.com/flowgraph/flowgraph v0.0.0
 	github.com/mitchellh/mapstructure v1.5.0
+	go.uber.org/zap v1.27.1
 )
 
 require (
@@ -19,6 +20,7 @@ require (
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect

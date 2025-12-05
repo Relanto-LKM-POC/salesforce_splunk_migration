@@ -8,34 +8,192 @@
 # Test binary, built with `go test -c`
 *.test
 
-# Output of the go coverage tool
+# Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-coverage.html
 
-# Dependency directories
-vendor/
+# Dependency directories (remove the comment below to include it)
+# vendor/
 
 # Go workspace file
 go.work
 
-# IDE
-.vscode/
+# Built binaries
+/bin/
+
+# IDE and editor files
+!.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+!.vscode/tasks.json
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Configuration files with sensitive data
-credentials.json
+# Environment variables
 .env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Credential files
+credentials.json
+credentials.yaml
+credentials.yml
+credentials.txt
 
 # Log files
 *.log
+logs/
+log/
 
-# Build artifacts
-bin/
-dist/
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Configuration files that might contain secrets
+config.json
+config.yaml
+config.yml
+secrets.json
+
+# Coverage reports
+coverage.out
+coverage.html
+cover.out
+
+# Profiling data
+*.prof
+*.pprof
+
+# Air live reload tool
+tmp/
+
+# Docker volumes
+docker-data/
+
+# Local development files
+local/
+
+# Backup files
+*.bak
+*.backup
+
+# Archive files
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# Node.js (if any frontend assets)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if any Python tools)
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Local certificates for development
+certs/
+
+# Monitoring and observability data
+prometheus-data/
+jaeger-data/
+grafana-data/
+
+# Documentation build artifacts
+docs/_build/
+docs/build/
+
+# Generated API documentation
+api-docs/generated/
+
+# Test artifacts
+test-results/
+test-coverage/
+
+# Performance test results
+*.bench
+test/benchmarks/results/*.json
+test/benchmarks/results/*.csv
+test/benchmarks/results/*.html
+test/benchmarks/output/*.json
+test/benchmarks/output/*.csv
+test/benchmarks/output/*.html
+test/benchmarks/*.prof
+test/benchmarks/*.pprof
+
+# Load test results
+test/load/results/*.json
+test/load/results/*.csv
+test/load/results/*.html
+
+# Local development overrides
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Migration files with sensitive data
+migrations/local/
+migrations/dev/
+
+# Generated protobuf files (if any)
+*.pb.go
+
+# Generated swagger files
+swagger.json
+swagger.yaml
+
+# Kubernetes secrets
+k8s/secrets/
+*.secret.yaml
+
+# Terraform state files (if any infrastructure as code)
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Local storage for development
+data/uploads/
+data/cache/
+data/temp/
+!test/data/
+
+# Cache directories
+.cache/
+cache/
+
+# Generated documentation
+docs/generated/
+
+# Local configuration overrides
+config.local.json
+config.local.yaml
+settings.local.json
+archive/

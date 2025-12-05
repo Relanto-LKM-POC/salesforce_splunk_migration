@@ -9,10 +9,14 @@ import (
 	"salesforce-splunk-migration/utils"
 )
 
+const VAULT_PATH = "credentials.json"
+
 // Execute runs the main migration workflow using FlowGraph orchestration
 func Execute() error {
+	logger := utils.GetLogger()
+
 	// Load configuration
-	config, err := utils.LoadConfig("credentials.json")
+	config, err := utils.LoadConfig(VAULT_PATH)
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
@@ -22,7 +26,7 @@ func Execute() error {
 		return fmt.Errorf("configuration validation failed: %w", err)
 	}
 
-	fmt.Println("✅ Configuration loaded and validated")
+	logger.Info("✅ Configuration loaded and validated")
 
 	// Create Splunk service
 	splunkService, err := services.NewSplunkService(config)
@@ -47,7 +51,9 @@ func Execute() error {
 	success, failed := state.GetCounters()
 
 	if failed > 0 {
-		fmt.Printf("\n⚠️  Migration completed with errors: %d/%d inputs failed\n", failed, success+failed)
+		logger.Warn("Migration completed with errors",
+			utils.Int("failed", failed),
+			utils.Int("total", success+failed))
 	}
 
 	return nil
