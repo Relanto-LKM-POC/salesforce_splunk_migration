@@ -552,3 +552,428 @@ func TestMockSplunkService_Integration(t *testing.T) {
 		assert.Equal(t, 0, mock.CreateIndexCalls)
 	})
 }
+
+func TestMockSplunkService_GetAuthToken(t *testing.T) {
+	t.Run("Success_WithCustomFunc", func(t *testing.T) {
+		expectedToken := "custom-test-token"
+		mock := &MockSplunkService{
+			GetAuthTokenFunc: func() string {
+				return expectedToken
+			},
+		}
+
+		token := mock.GetAuthToken()
+		assert.Equal(t, expectedToken, token)
+		assert.Equal(t, 1, mock.GetAuthTokenCalls)
+	})
+
+	t.Run("Success_WithAuthTokenValue", func(t *testing.T) {
+		expectedToken := "mock-auth-token-123"
+		mock := &MockSplunkService{
+			AuthTokenValue: expectedToken,
+		}
+
+		token := mock.GetAuthToken()
+		assert.Equal(t, expectedToken, token)
+		assert.Equal(t, 1, mock.GetAuthTokenCalls)
+	})
+
+	t.Run("Success_WithoutCustomFunc_ReturnsDefaultToken", func(t *testing.T) {
+		mock := &MockSplunkService{}
+
+		token := mock.GetAuthToken()
+		assert.Equal(t, "mock-token", token)
+		assert.Equal(t, 1, mock.GetAuthTokenCalls)
+	})
+
+	t.Run("Success_MultipleCalls_IncrementCounter", func(t *testing.T) {
+		mock := &MockSplunkService{
+			AuthTokenValue: "test-token",
+		}
+
+		for i := 1; i <= 5; i++ {
+			token := mock.GetAuthToken()
+			assert.Equal(t, "test-token", token)
+			assert.Equal(t, i, mock.GetAuthTokenCalls)
+		}
+	})
+
+	t.Run("Success_EmptyAuthTokenValue", func(t *testing.T) {
+		mock := &MockSplunkService{
+			AuthTokenValue: "",
+		}
+
+		token := mock.GetAuthToken()
+		assert.Equal(t, "mock-token", token) // Falls back to default
+		assert.Equal(t, 1, mock.GetAuthTokenCalls)
+	})
+}
+
+func TestMockSplunkService_CheckIndexExists(t *testing.T) {
+	t.Run("Success_IndexExists", func(t *testing.T) {
+		mock := &MockSplunkService{
+			CheckIndexExistsFunc: func(ctx context.Context, indexName string) (bool, error) {
+				assert.Equal(t, "test_index", indexName)
+				return true, nil
+			},
+		}
+
+		exists, err := mock.CheckIndexExists(context.Background(), "test_index")
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, 1, mock.CheckIndexExistsCalls)
+	})
+
+	t.Run("Success_IndexDoesNotExist", func(t *testing.T) {
+		mock := &MockSplunkService{
+			CheckIndexExistsFunc: func(ctx context.Context, indexName string) (bool, error) {
+				return false, nil
+			},
+		}
+
+		exists, err := mock.CheckIndexExists(context.Background(), "nonexistent")
+		assert.NoError(t, err)
+		assert.False(t, exists)
+		assert.Equal(t, 1, mock.CheckIndexExistsCalls)
+	})
+
+	t.Run("Success_WithoutCustomFunc_ReturnsFalse", func(t *testing.T) {
+		mock := &MockSplunkService{}
+
+		exists, err := mock.CheckIndexExists(context.Background(), "test_index")
+		assert.NoError(t, err)
+		assert.False(t, exists)
+		assert.Equal(t, 1, mock.CheckIndexExistsCalls)
+	})
+
+	t.Run("Error_CheckFailed", func(t *testing.T) {
+		expectedErr := errors.New("check failed")
+		mock := &MockSplunkService{
+			CheckIndexExistsFunc: func(ctx context.Context, indexName string) (bool, error) {
+				return false, expectedErr
+			},
+		}
+
+		exists, err := mock.CheckIndexExists(context.Background(), "test_index")
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+		assert.False(t, exists)
+		assert.Equal(t, 1, mock.CheckIndexExistsCalls)
+	})
+
+	t.Run("Success_MultipleCalls_WithDifferentIndexNames", func(t *testing.T) {
+		mock := &MockSplunkService{
+			CheckIndexExistsFunc: func(ctx context.Context, indexName string) (bool, error) {
+				return indexName == "existing_index", nil
+			},
+		}
+
+		indexNames := []string{"existing_index", "nonexistent", "another_index"}
+		for i, name := range indexNames {
+			exists, err := mock.CheckIndexExists(context.Background(), name)
+			assert.NoError(t, err)
+			assert.Equal(t, name == "existing_index", exists)
+			assert.Equal(t, i+1, mock.CheckIndexExistsCalls)
+		}
+	})
+}
+
+func TestMockSplunkService_UpdateIndex(t *testing.T) {
+	t.Run("Success_WithCustomFunc", func(t *testing.T) {
+		mock := &MockSplunkService{
+			UpdateIndexFunc: func(ctx context.Context, indexName string) error {
+				assert.Equal(t, "test_index", indexName)
+				return nil
+			},
+		}
+
+		err := mock.UpdateIndex(context.Background(), "test_index")
+		assert.NoError(t, err)
+		assert.Equal(t, 1, mock.UpdateIndexCalls)
+	})
+
+	t.Run("Success_WithoutCustomFunc", func(t *testing.T) {
+		mock := &MockSplunkService{}
+
+		err := mock.UpdateIndex(context.Background(), "test_index")
+		assert.NoError(t, err)
+		assert.Equal(t, 1, mock.UpdateIndexCalls)
+	})
+
+	t.Run("Error_UpdateFailed", func(t *testing.T) {
+		expectedErr := errors.New("update failed")
+		mock := &MockSplunkService{
+			UpdateIndexFunc: func(ctx context.Context, indexName string) error {
+				return expectedErr
+			},
+		}
+
+		err := mock.UpdateIndex(context.Background(), "test_index")
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+		assert.Equal(t, 1, mock.UpdateIndexCalls)
+	})
+
+	t.Run("Success_MultipleCalls_IncrementCounter", func(t *testing.T) {
+		mock := &MockSplunkService{}
+
+		for i := 1; i <= 3; i++ {
+			err := mock.UpdateIndex(context.Background(), "test_index")
+			assert.NoError(t, err)
+			assert.Equal(t, i, mock.UpdateIndexCalls)
+		}
+	})
+}
+
+func TestMockSplunkService_CheckSalesforceAccountExists(t *testing.T) {
+	t.Run("Success_AccountExists", func(t *testing.T) {
+		mock := &MockSplunkService{
+			CheckSalesforceAccountExistsFunc: func(ctx context.Context) (bool, error) {
+				return true, nil
+			},
+		}
+
+		exists, err := mock.CheckSalesforceAccountExists(context.Background())
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, 1, mock.CheckSalesforceAccountExistsCalls)
+	})
+
+	t.Run("Success_AccountDoesNotExist", func(t *testing.T) {
+		mock := &MockSplunkService{
+			CheckSalesforceAccountExistsFunc: func(ctx context.Context) (bool, error) {
+				return false, nil
+			},
+		}
+
+		exists, err := mock.CheckSalesforceAccountExists(context.Background())
+		assert.NoError(t, err)
+		assert.False(t, exists)
+		assert.Equal(t, 1, mock.CheckSalesforceAccountExistsCalls)
+	})
+
+	t.Run("Success_WithoutCustomFunc_ReturnsFalse", func(t *testing.T) {
+		mock := &MockSplunkService{}
+
+		exists, err := mock.CheckSalesforceAccountExists(context.Background())
+		assert.NoError(t, err)
+		assert.False(t, exists)
+		assert.Equal(t, 1, mock.CheckSalesforceAccountExistsCalls)
+	})
+
+	t.Run("Error_CheckFailed", func(t *testing.T) {
+		expectedErr := errors.New("check failed")
+		mock := &MockSplunkService{
+			CheckSalesforceAccountExistsFunc: func(ctx context.Context) (bool, error) {
+				return false, expectedErr
+			},
+		}
+
+		exists, err := mock.CheckSalesforceAccountExists(context.Background())
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+		assert.False(t, exists)
+		assert.Equal(t, 1, mock.CheckSalesforceAccountExistsCalls)
+	})
+
+	t.Run("Success_MultipleCalls_IncrementCounter", func(t *testing.T) {
+		mock := &MockSplunkService{}
+
+		for i := 1; i <= 4; i++ {
+			exists, err := mock.CheckSalesforceAccountExists(context.Background())
+			assert.NoError(t, err)
+			assert.False(t, exists)
+			assert.Equal(t, i, mock.CheckSalesforceAccountExistsCalls)
+		}
+	})
+}
+
+func TestMockSplunkService_UpdateSalesforceAccount(t *testing.T) {
+	t.Run("Success_WithCustomFunc", func(t *testing.T) {
+		mock := &MockSplunkService{
+			UpdateSalesforceAccountFunc: func(ctx context.Context) error {
+				return nil
+			},
+		}
+
+		err := mock.UpdateSalesforceAccount(context.Background())
+		assert.NoError(t, err)
+		assert.Equal(t, 1, mock.UpdateSalesforceAccountCalls)
+	})
+
+	t.Run("Success_WithoutCustomFunc", func(t *testing.T) {
+		mock := &MockSplunkService{}
+
+		err := mock.UpdateSalesforceAccount(context.Background())
+		assert.NoError(t, err)
+		assert.Equal(t, 1, mock.UpdateSalesforceAccountCalls)
+	})
+
+	t.Run("Error_UpdateFailed", func(t *testing.T) {
+		expectedErr := errors.New("update account failed")
+		mock := &MockSplunkService{
+			UpdateSalesforceAccountFunc: func(ctx context.Context) error {
+				return expectedErr
+			},
+		}
+
+		err := mock.UpdateSalesforceAccount(context.Background())
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+		assert.Equal(t, 1, mock.UpdateSalesforceAccountCalls)
+	})
+
+	t.Run("Success_MultipleCalls_IncrementCounter", func(t *testing.T) {
+		mock := &MockSplunkService{}
+
+		for i := 1; i <= 3; i++ {
+			err := mock.UpdateSalesforceAccount(context.Background())
+			assert.NoError(t, err)
+			assert.Equal(t, i, mock.UpdateSalesforceAccountCalls)
+		}
+	})
+}
+
+func TestMockSplunkService_UpdateDataInput(t *testing.T) {
+	t.Run("Success_WithCustomFunc", func(t *testing.T) {
+		input := &utils.DataInput{
+			Name:   "Test_Input",
+			Object: "Account",
+		}
+
+		mock := &MockSplunkService{
+			UpdateDataInputFunc: func(ctx context.Context, di *utils.DataInput) error {
+				assert.Equal(t, input.Name, di.Name)
+				assert.Equal(t, input.Object, di.Object)
+				return nil
+			},
+		}
+
+		err := mock.UpdateDataInput(context.Background(), input)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, mock.UpdateDataInputCalls)
+	})
+
+	t.Run("Success_WithoutCustomFunc", func(t *testing.T) {
+		mock := &MockSplunkService{}
+		input := &utils.DataInput{
+			Name:   "Test_Input",
+			Object: "Contact",
+		}
+
+		err := mock.UpdateDataInput(context.Background(), input)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, mock.UpdateDataInputCalls)
+	})
+
+	t.Run("Error_UpdateFailed", func(t *testing.T) {
+		expectedErr := errors.New("update failed")
+		mock := &MockSplunkService{
+			UpdateDataInputFunc: func(ctx context.Context, di *utils.DataInput) error {
+				return expectedErr
+			},
+		}
+
+		input := &utils.DataInput{}
+		err := mock.UpdateDataInput(context.Background(), input)
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+		assert.Equal(t, 1, mock.UpdateDataInputCalls)
+	})
+
+	t.Run("Success_NilDataInput", func(t *testing.T) {
+		mock := &MockSplunkService{
+			UpdateDataInputFunc: func(ctx context.Context, di *utils.DataInput) error {
+				assert.Nil(t, di)
+				return nil
+			},
+		}
+
+		err := mock.UpdateDataInput(context.Background(), nil)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, mock.UpdateDataInputCalls)
+	})
+
+	t.Run("Success_MultipleCalls_WithDifferentInputs", func(t *testing.T) {
+		mock := &MockSplunkService{}
+		inputs := []*utils.DataInput{
+			{Name: "Input1", Object: "Account"},
+			{Name: "Input2", Object: "Contact"},
+		}
+
+		for i, input := range inputs {
+			err := mock.UpdateDataInput(context.Background(), input)
+			assert.NoError(t, err)
+			assert.Equal(t, i+1, mock.UpdateDataInputCalls)
+		}
+	})
+}
+
+func TestMockSplunkService_CheckDataInputExists(t *testing.T) {
+	t.Run("Success_InputExists", func(t *testing.T) {
+		mock := &MockSplunkService{
+			CheckDataInputExistsFunc: func(ctx context.Context, inputName string) (bool, error) {
+				assert.Equal(t, "Test_Input", inputName)
+				return true, nil
+			},
+		}
+
+		exists, err := mock.CheckDataInputExists(context.Background(), "Test_Input")
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, 1, mock.CheckDataInputExistsCalls)
+	})
+
+	t.Run("Success_InputDoesNotExist", func(t *testing.T) {
+		mock := &MockSplunkService{
+			CheckDataInputExistsFunc: func(ctx context.Context, inputName string) (bool, error) {
+				return false, nil
+			},
+		}
+
+		exists, err := mock.CheckDataInputExists(context.Background(), "Nonexistent_Input")
+		assert.NoError(t, err)
+		assert.False(t, exists)
+		assert.Equal(t, 1, mock.CheckDataInputExistsCalls)
+	})
+
+	t.Run("Success_WithoutCustomFunc_ReturnsFalse", func(t *testing.T) {
+		mock := &MockSplunkService{}
+
+		exists, err := mock.CheckDataInputExists(context.Background(), "Test_Input")
+		assert.NoError(t, err)
+		assert.False(t, exists)
+		assert.Equal(t, 1, mock.CheckDataInputExistsCalls)
+	})
+
+	t.Run("Error_CheckFailed", func(t *testing.T) {
+		expectedErr := errors.New("check failed")
+		mock := &MockSplunkService{
+			CheckDataInputExistsFunc: func(ctx context.Context, inputName string) (bool, error) {
+				return false, expectedErr
+			},
+		}
+
+		exists, err := mock.CheckDataInputExists(context.Background(), "Test_Input")
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr, err)
+		assert.False(t, exists)
+		assert.Equal(t, 1, mock.CheckDataInputExistsCalls)
+	})
+
+	t.Run("Success_MultipleCalls_WithDifferentInputNames", func(t *testing.T) {
+		mock := &MockSplunkService{
+			CheckDataInputExistsFunc: func(ctx context.Context, inputName string) (bool, error) {
+				return inputName == "Existing_Input", nil
+			},
+		}
+
+		inputNames := []string{"Existing_Input", "Nonexistent", "Another_Input"}
+		for i, name := range inputNames {
+			exists, err := mock.CheckDataInputExists(context.Background(), name)
+			assert.NoError(t, err)
+			assert.Equal(t, name == "Existing_Input", exists)
+			assert.Equal(t, i+1, mock.CheckDataInputExistsCalls)
+		}
+	})
+}

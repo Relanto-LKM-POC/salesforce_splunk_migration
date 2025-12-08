@@ -1,0 +1,13 @@
+<dashboard>
+  <label>Test Dashboard</label>
+  <row>
+    <panel>
+      <title>Test Panel</title>
+      <single>
+        <search>
+          <query>index=main | stats count</query>
+        </search>
+      </single>
+    </panel>
+  </row>
+</dashboard>

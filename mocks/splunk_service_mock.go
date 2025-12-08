@@ -23,6 +23,10 @@ type MockSplunkService struct {
 	CheckDataInputExistsFunc         func(ctx context.Context, inputName string) (bool, error)
 	ListDataInputsFunc               func(ctx context.Context) ([]string, error)
 
+	// Mock data
+	AuthTokenValue    string
+	GetAuthTokenError error
+
 	// Call tracking
 	AuthenticateCalls                 int
 	GetAuthTokenCalls                 int
@@ -53,6 +57,9 @@ func (m *MockSplunkService) GetAuthToken() string {
 	m.GetAuthTokenCalls++
 	if m.GetAuthTokenFunc != nil {
 		return m.GetAuthTokenFunc()
+	}
+	if m.AuthTokenValue != "" {
+		return m.AuthTokenValue
 	}
 	return "mock-token"
 }

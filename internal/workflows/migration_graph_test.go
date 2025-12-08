@@ -708,6 +708,9 @@ func TestMigrationGraph_ExecuteWithNonCompletedStatus(t *testing.T) {
 
 func TestMigrationGraph_DashboardCreation(t *testing.T) {
 	t.Run("Success_WithDashboardDirectory", func(t *testing.T) {
+		// Use existing test resource directory
+		dashboardDir := "../../test/resources/dashboards"
+
 		config := &utils.Config{
 			Splunk: utils.SplunkConfig{
 				IndexName: "test_index",
@@ -717,7 +720,7 @@ func TestMigrationGraph_DashboardCreation(t *testing.T) {
 			},
 			Migration: utils.MigrationConfig{
 				ConcurrentRequests: 3,
-				DashboardDirectory: "resources/dashboards",
+				DashboardDirectory: dashboardDir,
 			},
 			Extensions: map[string]interface{}{
 				"DATA_INPUTS": []interface{}{
@@ -752,8 +755,8 @@ func TestMigrationGraph_DashboardCreation(t *testing.T) {
 		}
 
 		mockDashboardService := &mocks.MockDashboardService{
-			CreateDashboardsFromDirectoryFunc: func(ctx context.Context, dashboardDir string) error {
-				assert.Equal(t, "resources/dashboards", dashboardDir)
+			CreateDashboardsFromDirectoryFunc: func(ctx context.Context, receivedDir string) error {
+				assert.Equal(t, dashboardDir, receivedDir)
 				return nil
 			},
 		}
@@ -830,6 +833,9 @@ func TestMigrationGraph_DashboardCreation(t *testing.T) {
 	})
 
 	t.Run("Error_DashboardCreationFails", func(t *testing.T) {
+		// Use existing test resource directory
+		dashboardDir := "../../test/resources/dashboards"
+
 		config := &utils.Config{
 			Splunk: utils.SplunkConfig{
 				IndexName: "test_index",
@@ -839,7 +845,7 @@ func TestMigrationGraph_DashboardCreation(t *testing.T) {
 			},
 			Migration: utils.MigrationConfig{
 				ConcurrentRequests: 3,
-				DashboardDirectory: "resources/dashboards",
+				DashboardDirectory: dashboardDir,
 			},
 			Extensions: map[string]interface{}{
 				"DATA_INPUTS": []interface{}{

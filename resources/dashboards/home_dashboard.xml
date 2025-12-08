@@ -4,8 +4,18 @@
     <description>Dashboard through code</description>
     <definition><![CDATA[
 {
-    "title": "Automated Dashboard",
+    "title": "Home Automated Dashboard",
     "description": "",
+    "inputs": {
+        "input_9RDskAyp": {
+            "options": {
+                "defaultValue": "-24h@h,now",
+                "token": "tr_6Wa3jQuc"
+            },
+            "title": "Time Range Input Title",
+            "type": "input.timerange"
+        }
+    },
     "defaults": {
         "dataSources": {
             "ds.search": {
@@ -14,6 +24,342 @@
                 }
             }
         }
+    },
+    "visualizations": {
+        "viz_7PYIEnbq": {
+            "dataSources": {
+                "primary": "ds_QbkNB5j3"
+            },
+            "options": {
+                "dataValuesDisplay": "all",
+                "legendDisplay": "right",
+                "legendTruncation": "ellipsisMiddle",
+                "showIndependentYRanges": false,
+                "showRoundedY2AxisLabels": false,
+                "showSplitSeries": false,
+                "showY2MajorGridLines": true,
+                "stackMode": "auto",
+                "xAxisTitleVisibility": "show",
+                "y2AxisAbbreviation": "auto",
+                "y2AxisTitleVisibility": "show",
+                "yAxisAbbreviation": "auto",
+                "yAxisScale": "linear",
+                "yAxisTitleVisibility": "show"
+            },
+            "title": "Response Codes Distribution",
+            "type": "splunk.bar"
+        },
+        "viz_Ak7ARi41": {
+            "context": {
+                "convertedColorRange": [
+                    {
+                        "from": 0,
+                        "value": "#1182f3"
+                    },
+                    {
+                        "to": 0,
+                        "value": "#118832"
+                    }
+                ]
+            },
+            "dataSources": {
+                "primary": "ds_625My9rB"
+            },
+            "options": {
+                "backgroundColor": "#000000",
+                "majorColor": "#0877a6",
+                "numberPrecision": 0,
+                "shouldUseThousandSeparators": true,
+                "sparklineDisplay": "below",
+                "trendColor": "#000000",
+                "trendDisplay": "absolute",
+                "unitPosition": "after"
+            },
+            "title": "Number of API Hits",
+            "type": "splunk.singlevalue"
+        },
+        "viz_HGaJrw3n": {
+            "context": {
+                "convertedColorRange": [
+                    {
+                        "from": 100,
+                        "value": "#dc4e41"
+                    },
+                    {
+                        "from": 70,
+                        "to": 100,
+                        "value": "#f1813f"
+                    },
+                    {
+                        "from": 30,
+                        "to": 70,
+                        "value": "#f8be34"
+                    },
+                    {
+                        "from": 0,
+                        "to": 30,
+                        "value": "#0877a6"
+                    },
+                    {
+                        "to": 0,
+                        "value": "#53a051"
+                    }
+                ]
+            },
+            "dataSources": {
+                "primary": "ds_FI9KNP05"
+            },
+            "options": {
+                "majorColor": "#ffffff",
+                "majorValue": "> sparklineValues | lastPoint()",
+                "numberPrecision": 0,
+                "shouldUseThousandSeparators": true,
+                "sparklineDisplay": "below",
+                "sparklineValues": "> primary | seriesByName('uri')",
+                "trendDisplay": "absolute",
+                "trendValue": "> sparklineValues | delta(-2)",
+                "unitPosition": "after"
+            },
+            "title": "Most Active Endpoint",
+            "type": "splunk.singlevalue"
+        },
+        "viz_SZPwW2Wu": {
+            "dataSources": {
+                "primary": "ds_LMEnqskf"
+            },
+            "options": {
+                "collapseThreshold": 0.01,
+                "seriesColors": [
+                    "#4BB543",
+                    "#ff0000"
+                ]
+            },
+            "title": "Login Success VS. Failure",
+            "type": "splunk.pie"
+        },
+        "viz_bRLUYyk4": {
+            "dataSources": {
+                "primary": "ds_22lly3ul"
+            },
+            "options": {
+                "dataValuesDisplay": "all",
+                "legendDisplay": "right",
+                "legendTruncation": "ellipsisMiddle",
+                "showIndependentYRanges": false,
+                "showOverlayY2Axis": false,
+                "showRoundedY2AxisLabels": false,
+                "showSplitSeries": false,
+                "showY2MajorGridLines": true,
+                "xAxisLabelRotation": 0,
+                "xAxisTitleVisibility": "show",
+                "y2AxisAbbreviation": "auto",
+                "y2AxisTitleVisibility": "show",
+                "yAxisAbbreviation": "auto",
+                "yAxisScale": "linear",
+                "yAxisTitleVisibility": "show"
+            },
+            "title": "Average Response Time by URI",
+            "type": "splunk.column"
+        },
+        "viz_jhpUjFXH": {
+            "containerOptions": {
+                "visibility": {}
+            },
+            "dataSources": {
+                "fieldsummary": "ds_rJatSCFz",
+                "primary": "ds_0n62BVVL"
+            },
+            "options": {
+                "backgroundColor": "> themes.defaultBackgroundColor",
+                "columnFormat": {
+                    "Time": {
+                        "width": 152
+                    }
+                },
+                "tableFormat": {
+                    "rowBackgroundColors": "> table | seriesByIndex(0) | pick(tableRowBackgroundColorsByTheme)"
+                }
+            },
+            "showLastUpdated": false,
+            "showProgressBar": false,
+            "title": "Latest API hits",
+            "type": "splunk.table"
+        }
+    },
+    "dataSources": {
+        "ds_0n62BVVL": {
+            "name": "Search_1",
+            "options": {
+                "query": "index=\"user_management_api_dev\" \r\n| head 10\r\n| eval Time=strftime(_time, \"%A, %B %e, %Y %I:%M %p\") \r\n| fields Time, level, message, uri, method, response_code, response_time, error, user_id, token_issued, user_agent\r\n| fields - \"_raw\" \"_time\" \"_sourcetype\" \"_cd\" \"_bkt\" \"_index\" \"_serial\" \"_indextime\" \"user_agent\" \"_si\"\r\n",
+                "queryParameters": {
+                    "earliest": "$tr_6Wa3jQuc.earliest$",
+                    "latest": "$tr_6Wa3jQuc.latest$"
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_22lly3ul": {
+            "name": "Average Response Time by uri - Column chart search",
+            "options": {
+                "query": "index=\"user_management_api_dev\"\n| stats avg(response_time) as avg_response_time by uri",
+                "queryParameters": {
+                    "earliest": "$tr_6Wa3jQuc.earliest$",
+                    "latest": "$tr_6Wa3jQuc.latest$"
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_4EyuQBNz": {
+            "name": "Real-Time Api Hits 1 search",
+            "options": {
+                "query": "index=\"user_management_api_dev\"\n| head 6",
+                "queryParameters": {
+                    "earliest": "0"
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_625My9rB": {
+            "name": "Number of API Hits - Single value search",
+            "options": {
+                "query": "index=\"user_management_api_dev\"\r\n| stats count as API_Hits",
+                "queryParameters": {
+                    "earliest": "$tr_6Wa3jQuc.earliest$",
+                    "latest": "$tr_6Wa3jQuc.latest$"
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_FI9KNP05": {
+            "name": "Most Active Endpoint - Single value search",
+            "options": {
+                "query": "index=\"user_management_api_dev\" method=* uri=* \n| stats count by uri \n| sort -count \n| head 2",
+                "queryParameters": {
+                    "earliest": "$tr_6Wa3jQuc.earliest$",
+                    "latest": "$tr_6Wa3jQuc.latest$"
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_LMEnqskf": {
+            "name": "Login Success VS. Failure - Pie chart search",
+            "options": {
+                "query": "index=\"user_management_api_dev\" uri=\"/users/login\"\r\n| eval login_status=if(response_code=200, \"Success\", \"Failure\")\r\n| stats count by login_status\r\n| eval login_status=if(login_status==\"Success\", \"A_Success\", \"B_Failure\")\r\n| sort login_status\r\n| eval login_status=replace(login_status, \"A_\", \"\")\r\n| eval login_status=replace(login_status, \"B_\", \"\")",
+                "queryParameters": {
+                    "earliest": "$tr_6Wa3jQuc.earliest$",
+                    "latest": "$tr_6Wa3jQuc.latest$"
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_QbkNB5j3": {
+            "name": "Response Codes Distribution - Bar chart search",
+            "options": {
+                "query": "index=\"user_management_api_dev\"\n| stats count by response_code",
+                "queryParameters": {
+                    "earliest": "$tr_6Wa3jQuc.earliest$",
+                    "latest": "$tr_6Wa3jQuc.latest$"
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_rJatSCFz": {
+            "name": "Real-Time Api Hits 2 search",
+            "options": {
+                "extend": "ds_4EyuQBNz",
+                "query": "| fieldsummary maxvals=10"
+            },
+            "type": "ds.chain"
+        }
+    },
+    "layout": {
+        "globalInputs": [
+            "input_9RDskAyp"
+        ],
+        "layoutDefinitions": {
+            "layout_1": {
+                "options": {
+                    "height": 462,
+                    "width": 1440
+                },
+                "structure": [
+                    {
+                        "item": "viz_Ak7ARi41",
+                        "position": {
+                            "h": 172,
+                            "w": 224,
+                            "x": 0,
+                            "y": 0
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_SZPwW2Wu",
+                        "position": {
+                            "h": 257,
+                            "w": 664,
+                            "x": 0,
+                            "y": 172
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_bRLUYyk4",
+                        "position": {
+                            "h": 413,
+                            "w": 1440,
+                            "x": 0,
+                            "y": 429
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_jhpUjFXH",
+                        "position": {
+                            "h": 353,
+                            "w": 1440,
+                            "x": 0,
+                            "y": 842
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_HGaJrw3n",
+                        "position": {
+                            "h": 172,
+                            "w": 440,
+                            "x": 224,
+                            "y": 0
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_7PYIEnbq",
+                        "position": {
+                            "h": 429,
+                            "w": 776,
+                            "x": 664,
+                            "y": 0
+                        },
+                        "type": "block"
+                    }
+                ],
+                "type": "grid"
+            }
+        },
+        "tabs": {
+            "items": [
+                {
+                    "label": "New tab",
+                    "layoutId": "layout_1"
+                }
+            ]
+        }
+    },
+    "applicationProperties": {
+        "hideEdit": false,
+        "hideExport": false,
+        "hideOpenInSearch": false
     }
 }]]></definition>
     <meta type="hiddenElements"><![CDATA[{

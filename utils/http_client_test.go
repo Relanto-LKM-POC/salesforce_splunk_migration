@@ -1,9 +1,11 @@
-// Package utils provides HTTP client utilities
 package utils_test
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -140,15 +142,23 @@ func TestHTTPResponse_Headers(t *testing.T) {
 }
 
 func TestHTTPResponse_Duration(t *testing.T) {
-	config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
-	client := utils.NewHTTPClient(config)
-	ctx := context.Background()
+	t.Run("Success_MeasuresDuration", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			time.Sleep(10 * time.Millisecond) // Simulate some delay
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status": "ok"}`))
+		}))
+		defer server.Close()
 
-	resp, err := client.Get(ctx, "/delay/1", nil)
-	if err != nil {
-		t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-	}
-	assert.NotZero(t, resp.Duration)
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
+		client := utils.NewHTTPClient(config)
+		ctx := context.Background()
+
+		resp, err := client.Get(ctx, "/test", nil)
+		require.NoError(t, err)
+		assert.NotZero(t, resp.Duration)
+		assert.True(t, resp.Duration >= 10*time.Millisecond)
+	})
 }
 
 func TestNewHTTPClient(t *testing.T) {
@@ -239,26 +249,35 @@ func TestHTTPClient_RetryConfig(t *testing.T) {
 }
 
 func TestHTTPClient_ContextCancellation(t *testing.T) {
-	config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
-	client := utils.NewHTTPClient(config)
+	t.Run("Error_ContextCancelled", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			time.Sleep(100 * time.Millisecond)
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // Cancel immediately
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
+		client := utils.NewHTTPClient(config)
 
-	_, err := client.Get(ctx, "/delay/10", nil)
-	assert.Error(t, err)
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // Cancel immediately
+
+		_, err := client.Get(ctx, "/test", nil)
+		assert.Error(t, err)
+	})
 }
 
 func TestHTTPClient_Post(t *testing.T) {
 	t.Run("Success_PostWithBody", func(t *testing.T) {
-		config := utils.HTTPClientConfig{
-			BaseURL: "https://httpbin.org",
-			RetryConfig: utils.RetryConfig{
-				MaxRetries: 1,
-				RetryDelay: 1,
-			},
-		}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status": "created"}`))
+		}))
+		defer server.Close()
 
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
@@ -267,27 +286,33 @@ func TestHTTPClient_Post(t *testing.T) {
 			"num":  42,
 		}
 
-		resp, err := client.Post(ctx, "/post", body, nil)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.Post(ctx, "/test", body, nil)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 
 	t.Run("Error_InvalidBody", func(t *testing.T) {
-		config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
+		config := utils.HTTPClientConfig{BaseURL: "http://localhost"}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
 		// Use a channel which cannot be marshaled to JSON
 		invalidBody := make(chan int)
 
-		_, err := client.Post(ctx, "/post", invalidBody, nil)
+		_, err := client.Post(ctx, "/test", invalidBody, nil)
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to marshal request body")
 	})
 
 	t.Run("Success_PostWithComplexBody", func(t *testing.T) {
-		config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{"id": 123}`))
+		}))
+		defer server.Close()
+
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
@@ -301,24 +326,23 @@ func TestHTTPClient_Post(t *testing.T) {
 			},
 		}
 
-		resp, err := client.Post(ctx, "/post", body, nil)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.Post(ctx, "/test", body, nil)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 }
 
 func TestHTTPClient_PostForm(t *testing.T) {
 	t.Run("Success_PostFormData", func(t *testing.T) {
-		config := utils.HTTPClientConfig{
-			BaseURL: "https://httpbin.org",
-			RetryConfig: utils.RetryConfig{
-				MaxRetries: 1,
-				RetryDelay: 1,
-			},
-		}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, "application/x-www-form-urlencoded", r.Header.Get("Content-Type"))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"form": {"username": "testuser"}}`))
+		}))
+		defer server.Close()
 
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
@@ -327,27 +351,34 @@ func TestHTTPClient_PostForm(t *testing.T) {
 			"password": "testpass",
 		}
 
-		resp, err := client.PostForm(ctx, "/post", formData, nil)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.PostForm(ctx, "/test", formData, nil)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 
 	t.Run("Success_EmptyFormData", func(t *testing.T) {
-		config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
-		resp, err := client.PostForm(ctx, "/post", map[string]string{}, nil)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.PostForm(ctx, "/test", map[string]string{}, nil)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 
 	t.Run("Success_MultipleFormFields", func(t *testing.T) {
-		config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"success": true}`))
+		}))
+		defer server.Close()
+
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
@@ -357,24 +388,22 @@ func TestHTTPClient_PostForm(t *testing.T) {
 			"field3": "value3",
 		}
 
-		resp, err := client.PostForm(ctx, "/post", formData, nil)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.PostForm(ctx, "/test", formData, nil)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 }
 
 func TestHTTPClient_Put(t *testing.T) {
 	t.Run("Success_PutWithBody", func(t *testing.T) {
-		config := utils.HTTPClientConfig{
-			BaseURL: "https://httpbin.org",
-			RetryConfig: utils.RetryConfig{
-				MaxRetries: 1,
-				RetryDelay: 1,
-			},
-		}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPut, r.Method)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"id": 123, "name": "updated"}`))
+		}))
+		defer server.Close()
 
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
@@ -383,48 +412,55 @@ func TestHTTPClient_Put(t *testing.T) {
 			"name": "updated",
 		}
 
-		resp, err := client.Put(ctx, "/put", body, nil)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.Put(ctx, "/test", body, nil)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 
 	t.Run("Success_PutWithNilBody", func(t *testing.T) {
-		config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPut, r.Method)
+			w.WriteHeader(http.StatusNoContent)
+		}))
+		defer server.Close()
+
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
-		resp, err := client.Put(ctx, "/put", nil, nil)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.Put(ctx, "/test", nil, nil)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 }
 
 func TestHTTPClient_Delete(t *testing.T) {
 	t.Run("Success_Delete", func(t *testing.T) {
-		config := utils.HTTPClientConfig{
-			BaseURL: "https://httpbin.org",
-			RetryConfig: utils.RetryConfig{
-				MaxRetries: 1,
-				RetryDelay: 1,
-			},
-		}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodDelete, r.Method)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"deleted": true}`))
+		}))
+		defer server.Close()
 
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
-		resp, err := client.Delete(ctx, "/delete", nil)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.Delete(ctx, "/test", nil)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 
 	t.Run("Success_DeleteWithHeaders", func(t *testing.T) {
-		config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodDelete, r.Method)
+			assert.Equal(t, "test-value", r.Header.Get("X-Custom-Header"))
+			w.WriteHeader(http.StatusNoContent)
+		}))
+		defer server.Close()
+
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
@@ -432,48 +468,65 @@ func TestHTTPClient_Delete(t *testing.T) {
 			"X-Custom-Header": "test-value",
 		}
 
-		resp, err := client.Delete(ctx, "/delete", headers)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.Delete(ctx, "/test", headers)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 }
 
 func TestHTTPClient_Get(t *testing.T) {
 	t.Run("Success_GetWithParams", func(t *testing.T) {
-		config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodGet, r.Method)
+			assert.Equal(t, "value1", r.URL.Query().Get("param1"))
+			assert.Equal(t, "value2", r.URL.Query().Get("param2"))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"args": {"param1": "value1"}}`))
+		}))
+		defer server.Close()
+
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
-		resp, err := client.Get(ctx, "/get?param1=value1&param2=value2", nil)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.Get(ctx, "/test?param1=value1&param2=value2", nil)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 
 	t.Run("Success_GetWithNilHeaders", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status": "ok"}`))
+		}))
+		defer server.Close()
+
 		config := utils.HTTPClientConfig{
-			BaseURL: "https://httpbin.org",
+			BaseURL: server.URL,
 			Headers: nil,
 		}
 
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
-		resp, err := client.Get(ctx, "/get", nil)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.Get(ctx, "/test", nil)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 }
 
 func TestHTTPClient_CustomHeaders(t *testing.T) {
 	t.Run("Success_DefaultHeaders", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "TestClient/1.0", r.Header.Get("User-Agent"))
+			assert.Equal(t, "Bearer test-token", r.Header.Get("Authorization"))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"headers": {}}`))
+		}))
+		defer server.Close()
+
 		config := utils.HTTPClientConfig{
-			BaseURL: "https://httpbin.org",
+			BaseURL: server.URL,
 			Headers: map[string]string{
 				"User-Agent":    "TestClient/1.0",
 				"Authorization": "Bearer test-token",
@@ -483,15 +536,20 @@ func TestHTTPClient_CustomHeaders(t *testing.T) {
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
-		resp, err := client.Get(ctx, "/headers", nil)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.Get(ctx, "/test", nil)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 
 	t.Run("Success_RequestSpecificHeaders", func(t *testing.T) {
-		config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "12345", r.Header.Get("X-Request-ID"))
+			assert.Equal(t, "value", r.Header.Get("X-Custom"))
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
@@ -500,96 +558,188 @@ func TestHTTPClient_CustomHeaders(t *testing.T) {
 			"X-Custom":     "value",
 		}
 
-		resp, err := client.Get(ctx, "/headers", headers)
-		if err != nil {
-			t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-		}
+		resp, err := client.Get(ctx, "/test", headers)
+		require.NoError(t, err)
 		assert.True(t, resp.IsSuccess())
 	})
 }
 
 func TestHTTPClient_Timeout(t *testing.T) {
-	config := utils.HTTPClientConfig{
-		BaseURL: "https://httpbin.org",
-		Timeout: 1, // 1 nanosecond - should timeout
-		RetryConfig: utils.RetryConfig{
-			MaxRetries: 0,
-		},
-	}
+	t.Run("Error_RequestTimeout", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			time.Sleep(200 * time.Millisecond)
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
 
-	client := utils.NewHTTPClient(config)
-	ctx := context.Background()
+		config := utils.HTTPClientConfig{
+			BaseURL: server.URL,
+			Timeout: 10 * time.Millisecond,
+			RetryConfig: utils.RetryConfig{
+				MaxRetries: 0,
+			},
+		}
 
-	_, err := client.Get(ctx, "/delay/5", nil)
-	assert.Error(t, err)
+		client := utils.NewHTTPClient(config)
+		ctx := context.Background()
+
+		_, err := client.Get(ctx, "/test", nil)
+		assert.Error(t, err)
+	})
 }
 
 func TestHTTPClient_ContextWithTimeout(t *testing.T) {
-	config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
-	client := utils.NewHTTPClient(config)
-	ctx, cancel := context.WithTimeout(context.Background(), 1)
-	defer cancel()
+	t.Run("Error_ContextTimeout", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			time.Sleep(200 * time.Millisecond)
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
 
-	_, err := client.Get(ctx, "/delay/10", nil)
-	assert.Error(t, err)
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
+		client := utils.NewHTTPClient(config)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		_, err := client.Get(ctx, "/test", nil)
+		assert.Error(t, err)
+	})
 }
 
 func TestHTTPClient_RetryLogic(t *testing.T) {
 	t.Run("Success_RetryOn500", func(t *testing.T) {
+		attempts := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attempts++
+			if attempts < 2 {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(`{"error": "server error"}`))
+			} else {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"status": "ok"}`))
+			}
+		}))
+		defer server.Close()
+
 		config := utils.HTTPClientConfig{
-			BaseURL: "https://httpbin.org",
+			BaseURL: server.URL,
 			RetryConfig: utils.RetryConfig{
 				MaxRetries: 2,
-				RetryDelay: 1,
+				RetryDelay: 10 * time.Millisecond,
 			},
 		}
 
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
-		// This will return 500, should be retried
-		client.Get(ctx, "/status/500", nil)
-		// Test passes if it doesn't panic
+		resp, err := client.Get(ctx, "/test", nil)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.GreaterOrEqual(t, attempts, 2)
 	})
 
 	t.Run("Success_RetryOn429", func(t *testing.T) {
+		attempts := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attempts++
+			if attempts == 1 {
+				w.WriteHeader(http.StatusTooManyRequests)
+				w.Write([]byte(`{"error": "rate limited"}`))
+			} else {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"status": "ok"}`))
+			}
+		}))
+		defer server.Close()
+
 		config := utils.HTTPClientConfig{
-			BaseURL: "https://httpbin.org",
+			BaseURL: server.URL,
 			RetryConfig: utils.RetryConfig{
 				MaxRetries: 1,
-				RetryDelay: 1,
+				RetryDelay: 10 * time.Millisecond,
 			},
 		}
 
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
-		// 429 (rate limit) should be retried
-		client.Get(ctx, "/status/429", nil)
-		// Test passes if it doesn't panic
+		resp, err := client.Get(ctx, "/test", nil)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 }
 
 func TestHTTPClient_SpecialStatusCodes(t *testing.T) {
-	config := utils.HTTPClientConfig{BaseURL: "https://httpbin.org"}
-	client := utils.NewHTTPClient(config)
-	ctx := context.Background()
+	t.Run("Success_Handle409Conflict", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusConflict)
+			w.Write([]byte(`{"error": "resource already exists"}`))
+		}))
+		defer server.Close()
 
-	// 409 should be treated as success (resource already exists)
-	resp, err := client.Get(ctx, "/status/409", nil)
-	if err != nil || (resp != nil && resp.StatusCode == 503) {
-		t.Skipf("Skipping test, httpbin.org not accessible: %v", err)
-	}
-	assert.Equal(t, 409, resp.StatusCode)
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
+		client := utils.NewHTTPClient(config)
+		ctx := context.Background()
+
+		// 409 should be treated as success (resource already exists)
+		resp, err := client.Get(ctx, "/test", nil)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusConflict, resp.StatusCode)
+	})
+
+	t.Run("Success_Handle404NotFound", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(`{"error": "not found"}`))
+		}))
+		defer server.Close()
+
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
+		client := utils.NewHTTPClient(config)
+		ctx := context.Background()
+
+		// 404 should return response without error
+		resp, err := client.Get(ctx, "/test", nil)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("Success_Handle500WithAlreadyExists", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error": "resource already exists"}`))
+		}))
+		defer server.Close()
+
+		config := utils.HTTPClientConfig{BaseURL: server.URL}
+		client := utils.NewHTTPClient(config)
+		ctx := context.Background()
+
+		// 500 with "already exists" message should return without error
+		resp, err := client.Get(ctx, "/test", nil)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
 }
 
 func TestHTTPClient_BackoffRetry(t *testing.T) {
 	t.Run("Success_ExponentialBackoff", func(t *testing.T) {
+		attempts := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attempts++
+			if attempts < 3 {
+				w.WriteHeader(http.StatusServiceUnavailable)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
+		}))
+		defer server.Close()
+
 		config := utils.HTTPClientConfig{
-			BaseURL: "https://httpbin.org",
+			BaseURL: server.URL,
 			RetryConfig: utils.RetryConfig{
 				MaxRetries: 3,
-				RetryDelay: 1,
+				RetryDelay: 5 * time.Millisecond,
 				BackoffExp: 2.0,
 			},
 		}
@@ -597,17 +747,29 @@ func TestHTTPClient_BackoffRetry(t *testing.T) {
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
-		// This will fail but test backoff logic
-		client.Get(ctx, "/status/503", nil)
-		// Test passes if it doesn't panic
+		resp, err := client.Get(ctx, "/test", nil)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, 3, attempts)
 	})
 
 	t.Run("Success_LinearBackoff", func(t *testing.T) {
+		attempts := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attempts++
+			if attempts < 2 {
+				w.WriteHeader(http.StatusBadGateway)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
+		}))
+		defer server.Close()
+
 		config := utils.HTTPClientConfig{
-			BaseURL: "https://httpbin.org",
+			BaseURL: server.URL,
 			RetryConfig: utils.RetryConfig{
 				MaxRetries: 2,
-				RetryDelay: 1,
+				RetryDelay: 5 * time.Millisecond,
 				BackoffExp: 1.0,
 			},
 		}
@@ -615,16 +777,28 @@ func TestHTTPClient_BackoffRetry(t *testing.T) {
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
-		client.Get(ctx, "/status/502", nil)
-		// Test passes if it doesn't panic
+		resp, err := client.Get(ctx, "/test", nil)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	t.Run("Success_PowCalculation", func(t *testing.T) {
+		attempts := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attempts++
+			if attempts < 3 {
+				w.WriteHeader(http.StatusServiceUnavailable)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
+		}))
+		defer server.Close()
+
 		config := utils.HTTPClientConfig{
-			BaseURL: "https://httpbin.org",
+			BaseURL: server.URL,
 			RetryConfig: utils.RetryConfig{
 				MaxRetries: 4,
-				RetryDelay: 1,
+				RetryDelay: 5 * time.Millisecond,
 				BackoffExp: 3.0,
 			},
 		}
@@ -632,23 +806,37 @@ func TestHTTPClient_BackoffRetry(t *testing.T) {
 		client := utils.NewHTTPClient(config)
 		ctx := context.Background()
 
-		client.Get(ctx, "/status/503", nil)
-		// Test passes if it doesn't panic
+		resp, err := client.Get(ctx, "/test", nil)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 }
 
 func TestHTTPClient_MaxRetriesExceeded(t *testing.T) {
-	config := utils.HTTPClientConfig{
-		BaseURL: "https://httpbin.org",
-		RetryConfig: utils.RetryConfig{
-			MaxRetries: 2,
-			RetryDelay: 1,
-		},
-	}
+	t.Run("Error_MaxRetriesExhausted", func(t *testing.T) {
+		attempts := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attempts++
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte(`{"error": "service unavailable"}`))
+		}))
+		defer server.Close()
 
-	client := utils.NewHTTPClient(config)
-	ctx := context.Background()
+		config := utils.HTTPClientConfig{
+			BaseURL: server.URL,
+			RetryConfig: utils.RetryConfig{
+				MaxRetries: 2,
+				RetryDelay: 5 * time.Millisecond,
+			},
+		}
 
-	client.Get(ctx, "/status/503", nil)
-	// Should exhaust retries - test passes if it doesn't panic
+		client := utils.NewHTTPClient(config)
+		ctx := context.Background()
+
+		_, err := client.Get(ctx, "/test", nil)
+		assert.Error(t, err)
+		// Error can be either "max retries" or "request failed with status 503"
+		assert.True(t, err != nil, "Expected an error after exhausting retries")
+		assert.Equal(t, 3, attempts) // Initial + 2 retries
+	})
 }

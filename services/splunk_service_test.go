@@ -708,3 +708,714 @@ func TestSplunkService_CheckResponseMessages(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to parse response")
 	})
 }
+
+func TestSplunkService_CheckIndexExists(t *testing.T) {
+	t.Run("Success_IndexExists", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				response := map[string]interface{}{
+					"entry": []interface{}{
+						map[string]interface{}{"name": "test_index"},
+					},
+				}
+				body, _ := json.Marshal(response)
+				return &utils.HTTPResponse{
+					StatusCode: 200,
+					Body:       body,
+				}, nil
+			},
+		}
+
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckIndexExists(context.Background(), "test_index")
+		require.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("Success_IndexNotExists", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 404,
+					Body:       []byte("Not Found"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckIndexExists(context.Background(), "test_index")
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
+
+	t.Run("Error_EmptyIndexName", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{}
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckIndexExists(context.Background(), "")
+		require.Error(t, err)
+		assert.False(t, exists)
+		assert.Contains(t, err.Error(), "index name cannot be empty")
+	})
+
+	t.Run("Error_NetworkError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return nil, fmt.Errorf("network error")
+			},
+		}
+
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckIndexExists(context.Background(), "test_index")
+		require.Error(t, err)
+		assert.False(t, exists)
+		assert.Contains(t, err.Error(), "network error")
+	})
+
+	t.Run("Success_InvalidJSON_ReturnsTrue", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 200,
+					Body:       []byte("invalid json"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckIndexExists(context.Background(), "test_index")
+		require.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("Success_UnexpectedStatusCode_ReturnsFalse", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 500,
+					Body:       []byte("Internal Server Error"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckIndexExists(context.Background(), "test_index")
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
+}
+
+func TestSplunkService_UpdateIndex(t *testing.T) {
+	t.Run("Success_ValidUpdate", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 200,
+					Body:       []byte(`{"entry": []}`),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		err := service.UpdateIndex(context.Background(), "test_index")
+		require.NoError(t, err)
+	})
+
+	t.Run("Error_EmptyIndexName", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{}
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		err := service.UpdateIndex(context.Background(), "")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "index name cannot be empty")
+	})
+
+	t.Run("Error_HTTPError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 400,
+					Body:       []byte("Bad Request"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		err := service.UpdateIndex(context.Background(), "test_index")
+		require.Error(t, err)
+	})
+
+	t.Run("Error_NetworkError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return nil, fmt.Errorf("network error")
+			},
+		}
+
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		err := service.UpdateIndex(context.Background(), "test_index")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "network error")
+	})
+
+	t.Run("Error_InternalServerError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 500,
+					Body:       []byte("Internal Server Error"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		err := service.UpdateIndex(context.Background(), "test_index")
+		require.Error(t, err)
+	})
+}
+
+func TestSplunkService_CheckSalesforceAccountExists(t *testing.T) {
+	t.Run("Success_AccountExists", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				response := map[string]interface{}{
+					"entry": []interface{}{
+						map[string]interface{}{"name": "test_account"},
+					},
+				}
+				body, _ := json.Marshal(response)
+				return &utils.HTTPResponse{
+					StatusCode: 200,
+					Body:       body,
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckSalesforceAccountExists(context.Background())
+		require.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("Success_AccountNotExists", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 404,
+					Body:       []byte("Not Found"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckSalesforceAccountExists(context.Background())
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
+
+	t.Run("Error_NetworkError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return nil, fmt.Errorf("network error")
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckSalesforceAccountExists(context.Background())
+		require.Error(t, err)
+		assert.False(t, exists)
+		assert.Contains(t, err.Error(), "network error")
+	})
+
+	t.Run("Success_InvalidJSON_ReturnsTrue", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 200,
+					Body:       []byte("invalid json"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckSalesforceAccountExists(context.Background())
+		require.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("Success_500_WithoutNotFoundMessage_ReturnsFalse", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 500,
+					Body:       []byte("Internal Server Error"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckSalesforceAccountExists(context.Background())
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
+
+	t.Run("Success_500_WithNotFoundMessage_ReturnsFalse", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 500,
+					Body:       []byte("Not Found - [404] Could not find object"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckSalesforceAccountExists(context.Background())
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
+}
+
+func TestSplunkService_UpdateSalesforceAccount(t *testing.T) {
+	t.Run("Success_ValidUpdate", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 200,
+					Body:       []byte(`{"entry": []}`),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName:  "test_account",
+				Endpoint:     "https://login.salesforce.com",
+				ClientID:     "client_id",
+				ClientSecret: "client_secret",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		err := service.UpdateSalesforceAccount(context.Background())
+		require.NoError(t, err)
+	})
+
+	t.Run("Error_HTTPError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 400,
+					Body:       []byte("Bad Request"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		err := service.UpdateSalesforceAccount(context.Background())
+		require.Error(t, err)
+	})
+
+	t.Run("Error_NetworkError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return nil, fmt.Errorf("network error")
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		err := service.UpdateSalesforceAccount(context.Background())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "network error")
+	})
+
+	t.Run("Error_InternalServerError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 500,
+					Body:       []byte("Internal Server Error"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		err := service.UpdateSalesforceAccount(context.Background())
+		require.Error(t, err)
+	})
+}
+
+func TestSplunkService_CheckDataInputExists(t *testing.T) {
+	t.Run("Success_DataInputExists", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				response := map[string]interface{}{
+					"entry": []interface{}{
+						map[string]interface{}{"name": "Account_Input"},
+					},
+				}
+				body, _ := json.Marshal(response)
+				return &utils.HTTPResponse{
+					StatusCode: 200,
+					Body:       body,
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckDataInputExists(context.Background(), "Account_Input")
+		require.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("Success_DataInputNotExists", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 404,
+					Body:       []byte("Not Found"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckDataInputExists(context.Background(), "Account_Input")
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
+
+	t.Run("Error_NetworkError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return nil, fmt.Errorf("network error")
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckDataInputExists(context.Background(), "Account_Input")
+		require.Error(t, err)
+		assert.False(t, exists)
+		assert.Contains(t, err.Error(), "network error")
+	})
+
+	t.Run("Success_InvalidJSON_ReturnsTrue", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 200,
+					Body:       []byte("invalid json"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckDataInputExists(context.Background(), "Account_Input")
+		require.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("Success_500_WithoutNotFoundMessage_ReturnsFalse", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 500,
+					Body:       []byte("Internal Server Error"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckDataInputExists(context.Background(), "Account_Input")
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
+
+	t.Run("Success_500_WithNotFoundMessage_ReturnsFalse", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			GetFunc: func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 500,
+					Body:       []byte("Not Found - [404]"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		exists, err := service.CheckDataInputExists(context.Background(), "Account_Input")
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
+}
+
+func TestSplunkService_UpdateDataInput(t *testing.T) {
+	t.Run("Success_ValidUpdate", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 200,
+					Body:       []byte(`{"entry": []}`),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+			Splunk: utils.SplunkConfig{
+				DefaultIndex: "main",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		input := &utils.DataInput{
+			Name:   "Account_Input",
+			Object: "Account",
+		}
+
+		err := service.UpdateDataInput(context.Background(), input)
+		require.NoError(t, err)
+	})
+
+	t.Run("Error_NilInput", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{}
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		err := service.UpdateDataInput(context.Background(), nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "data input cannot be nil")
+	})
+
+	t.Run("Error_HTTPError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 400,
+					Body:       []byte("Bad Request"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		input := &utils.DataInput{
+			Name:   "Account_Input",
+			Object: "Account",
+		}
+
+		err := service.UpdateDataInput(context.Background(), input)
+		require.Error(t, err)
+	})
+
+	t.Run("Error_NetworkError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return nil, fmt.Errorf("network error")
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		input := &utils.DataInput{
+			Name:   "Account_Input",
+			Object: "Account",
+		}
+
+		err := service.UpdateDataInput(context.Background(), input)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "network error")
+	})
+
+	t.Run("Error_InternalServerError", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				return &utils.HTTPResponse{
+					StatusCode: 500,
+					Body:       []byte("Internal Server Error"),
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		input := &utils.DataInput{
+			Name:   "Account_Input",
+			Object: "Account",
+		}
+
+		err := service.UpdateDataInput(context.Background(), input)
+		require.Error(t, err)
+	})
+}
+
+func TestSplunkService_GetAuthToken(t *testing.T) {
+	t.Run("Success_ReturnsToken", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{
+			PostFormFunc: func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error) {
+				authResponse := models.AuthResponse{
+					SessionKey: "test-token-12345",
+				}
+				body, _ := json.Marshal(authResponse)
+				return &utils.HTTPResponse{
+					StatusCode: 200,
+					Body:       body,
+				}, nil
+			},
+		}
+
+		config := &utils.Config{
+			Splunk: utils.SplunkConfig{
+				Username: "admin",
+				Password: "password",
+			},
+		}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		// Authenticate first
+		err := service.Authenticate(context.Background())
+		require.NoError(t, err)
+
+		// Get token
+		token := service.GetAuthToken()
+		assert.Equal(t, "test-token-12345", token)
+	})
+
+	t.Run("Success_EmptyTokenBeforeAuth", func(t *testing.T) {
+		mockClient := &mocks.MockHTTPClient{}
+		config := &utils.Config{}
+		service, _ := services.NewSplunkServiceWithClient(config, mockClient)
+
+		token := service.GetAuthToken()
+		assert.Empty(t, token)
+	})
+}
