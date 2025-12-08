@@ -120,6 +120,7 @@ func (p *MigrationNodeProcessor) createIndexNode(ctx context.Context) error {
 	// Check if index already exists
 	exists, err := p.splunkService.CheckIndexExists(ctx, p.config.Splunk.IndexName)
 	if err != nil {
+		// Only log warning for actual errors (404 is handled gracefully by CheckIndexExists)
 		p.logger.Warn("Could not check if index exists, will attempt to create",
 			utils.String("index_name", p.config.Splunk.IndexName),
 			utils.Err(err))
@@ -159,6 +160,7 @@ func (p *MigrationNodeProcessor) createAccountNode(ctx context.Context) error {
 	// Check if account already exists
 	exists, err := p.splunkService.CheckSalesforceAccountExists(ctx)
 	if err != nil {
+		// Only log warning for actual errors (404 is handled gracefully by CheckSalesforceAccountExists)
 		p.logger.Warn("Could not check if Salesforce account exists, will attempt to create",
 			utils.String("account", p.config.Salesforce.AccountName),
 			utils.Err(err))
@@ -229,6 +231,7 @@ func (p *MigrationNodeProcessor) createDataInputsNode(ctx context.Context) error
 			// Check if data input already exists
 			exists, err := p.splunkService.CheckDataInputExists(ctx, inp.Name)
 			if err != nil {
+				// Only log warning for actual errors (404 is handled gracefully by CheckDataInputExists)
 				p.logger.Warn("Could not check if data input exists, will attempt to create",
 					utils.String("name", inp.Name),
 					utils.Err(err))

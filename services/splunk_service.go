@@ -4,6 +4,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"salesforce-splunk-migration/models"
@@ -204,6 +205,11 @@ func (s *SplunkService) CheckIndexExists(ctx context.Context, indexName string) 
 		return false, fmt.Errorf("failed to check index existence: %w", err)
 	}
 
+	// 404 means index doesn't exist - this is not an error condition
+	if resp.StatusCode == 404 {
+		return false, nil
+	}
+
 	return resp.StatusCode == 200, nil
 }
 
@@ -291,6 +297,22 @@ func (s *SplunkService) CheckSalesforceAccountExists(ctx context.Context) (bool,
 	resp, err := s.httpClient.Get(ctx, url, headers)
 	if err != nil {
 		return false, fmt.Errorf("failed to check Salesforce account existence: %w", err)
+	}
+
+	// Any 4xx error means account doesn't exist or we can't access it
+	if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+		return false, nil
+	}
+
+	// 500 error with "Not Found" message means account doesn't exist
+	// (Splunk returns 500 instead of 404 for some endpoints)
+	if resp.StatusCode == 500 {
+		bodyStr := string(resp.Body)
+		if strings.Contains(bodyStr, "Not Found") ||
+			strings.Contains(bodyStr, "Could not find object") ||
+			strings.Contains(bodyStr, "[404]") {
+			return false, nil
+		}
 	}
 
 	return resp.StatusCode == 200, nil
@@ -387,6 +409,22 @@ func (s *SplunkService) CheckDataInputExists(ctx context.Context, inputName stri
 	resp, err := s.httpClient.Get(ctx, url, headers)
 	if err != nil {
 		return false, fmt.Errorf("failed to check data input existence: %w", err)
+	}
+
+	// Any 4xx error means data input doesn't exist or we can't access it
+	if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+		return false, nil
+	}
+
+	// 500 error with "Not Found" message means data input doesn't exist
+	// (Splunk returns 500 instead of 404 for some endpoints)
+	if resp.StatusCode == 500 {
+		bodyStr := string(resp.Body)
+		if strings.Contains(bodyStr, "Not Found") ||
+			strings.Contains(bodyStr, "Could not find object") ||
+			strings.Contains(bodyStr, "[404]") {
+			return false, nil
+		}
 	}
 
 	return resp.StatusCode == 200, nil

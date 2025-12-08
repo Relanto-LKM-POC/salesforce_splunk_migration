@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -273,17 +274,16 @@ func (hc *HTTPClient) executeWithRetry(ctx context.Context, method, url string, 
 		// Handle specific error codes
 		if resp.StatusCode == 409 {
 			// Conflict - resource already exists
-			hc.logger.Info("Resource already exists (409)",
-				String("response", string(responseBody)))
 			return response, nil
 		}
 
 		// Check if it's a 500 error with "already in use" message
 		if resp.StatusCode == 500 {
-			bodyStr := string(responseBody)
 			if bytes.Contains(responseBody, []byte("already in use")) || bytes.Contains(responseBody, []byte("already exists")) {
-				hc.logger.Info("Resource already exists (500)",
-					String("response", bodyStr))
+				return response, nil
+			}
+			// Check if it's a 500 error with "Not Found" or "404" - treat as resource doesn't exist
+			if bytes.Contains(responseBody, []byte("Not Found")) || bytes.Contains(responseBody, []byte("[404]")) || bytes.Contains(responseBody, []byte("Could not find object")) {
 				return response, nil
 			}
 		}
@@ -294,7 +294,12 @@ func (hc *HTTPClient) executeWithRetry(ctx context.Context, method, url string, 
 			continue
 		}
 
-		// Client error (4xx) - don't retry
+		// 404 Not Found or 403 Forbidden - return response without error (resource doesn't exist or no access)
+		if resp.StatusCode == 404 || resp.StatusCode == 403 {
+			return response, nil
+		}
+
+		// Client error (4xx except 404, 403) - don't retry, return error
 		if resp.StatusCode >= 400 && resp.StatusCode < 500 && resp.StatusCode != 429 {
 			return response, fmt.Errorf("client error: %d - %s", resp.StatusCode, string(responseBody))
 		}
@@ -339,11 +344,15 @@ func (hr *HTTPResponse) IsServerError() bool {
 
 // isRetryableError determines if an error is retryable
 func isRetryableError(err error) bool {
+	// Don't retry context errors (deadline exceeded, cancelled)
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return false
+	}
 	// Network errors are typically retryable
 	if _, ok := err.(net.Error); ok {
 		return true
 	}
-	return true
+	return false
 }
 
 // pow calculates base^exp
