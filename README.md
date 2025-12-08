@@ -104,11 +104,41 @@ The application uses `credentials.json` for configuration. The file supports bot
 
 **Migration Settings:**
 - `MIGRATION_CONCURRENT_REQUESTS`: Number of parallel data input creations (default: 5)
+- `MIGRATION_DASHBOARD_DIRECTORY`: Path to directory containing dashboard XML files (default: `./resources/dashboards`)
 - `MIGRATION_LOG_LEVEL`: Logging level (`debug`, `info`, `warn`, `error`)
 
 **Data Inputs:**
 - Array of Salesforce objects to monitor
 - Each input specifies the object type, fields, polling interval, and target index
+
+### Dashboard Creation (Optional)
+
+To enable automatic dashboard creation during migration:
+
+1. **Create Dashboard Directory** (if not exists):
+   ```powershell
+   mkdir -p resources/dashboards
+   ```
+
+2. **Add Dashboard XML Files**: Place Splunk dashboard XML files in the directory:
+   ```
+   resources/
+     dashboards/
+       analytics_dashboard.xml
+       home_dashboard.xml
+   ```
+
+3. **Configure Path** (already set in example):
+   ```json
+   {
+     "MIGRATION_DASHBOARD_DIRECTORY": "./resources/dashboards"
+   }
+   ```
+
+**Behavior**: 
+- If configured and directory exists, all XML files are processed and dashboards created in Splunk
+- If not configured or directory missing, this step is gracefully skipped
+- Dashboard names are derived from filenames (without .xml extension)
 
 ## Usage
 
@@ -141,6 +171,7 @@ The application runs as a single automated workflow powered by FlowGraph orchest
 5. **Load Inputs** - Parse data input configurations
 6. **Create Inputs** - Create data inputs in parallel with concurrency control
 7. **Verify Inputs** - Validate all inputs were created successfully
+8. **Create Dashboards** - Create Splunk dashboards from XML templates (optional, skipped if not configured)
 
 ### Build the Application
 
@@ -449,6 +480,8 @@ This tool uses FlowGraph for workflow orchestration, providing:
 [create_data_inputs] ← Parallel execution with semaphore
      ↓
 [verify_inputs]
+     ↓
+[create_dashboards] ← Optional, skipped if not configured
 ```
 
 ### Custom Node Processor
