@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<dashboard version="2" theme="dark">
+    <label>Analytics Automated Dashboard</label>
+    <description>Dashboard through code</description>
+    <definition><![CDATA[
+{
+    "title": "Analytics Automated Dashboard",
+    "description": "",
+    "defaults": {
+        "dataSources": {
+            "ds.search": {
+                "options": {
+                    "queryParameters": {}
+                }
+            }
+        }
+    }
+}]]></definition>
+    <meta type="hiddenElements"><![CDATA[{
+    "hideEdit": false,
+    "hideOpenInSearch": false,
+    "hideExport": false
+}]]></meta>
+</dashboard>

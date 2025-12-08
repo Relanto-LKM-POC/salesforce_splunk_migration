@@ -176,19 +176,6 @@ go tool cover -html=coverage.out -o coverage.html
 
 This generates `coverage.html` for viewing detailed coverage reports.
 
-### Format and Lint Code
-
-```powershell
-# Format code
-go fmt ./...
-
-# Tidy dependencies
-go mod tidy
-
-# Run linter (requires golangci-lint)
-golangci-lint run
-```
-
 ### Environment Variables
 
 The application can read configuration from environment variables or `credentials.json`:
@@ -557,48 +544,6 @@ docker run -v ${PWD}/credentials.json:/app/credentials.json salesforce-splunk-mi
 ```
 
 The included `Dockerfile` creates a minimal container with the compiled binary.
-
-## Security Best Practices
-
-1. **Credentials Management**
-   - Never commit `credentials.json` to version control
-   - Use environment variables for CI/CD pipelines
-   - Consider using HashiCorp Vault or similar for production
-
-2. **SSL/TLS**
-   - Use CA-signed certificates in production
-   - Only bypass SSL verification in development/testing
-   - Verify certificate chains when possible
-
-3. **Access Control**
-   - Use least-privilege Splunk accounts
-   - Rotate credentials regularly
-   - Audit API access logs
-
-4. **Network Security**
-   - Use VPN or private networks for Splunk access
-   - Firewall rules to restrict access to port 8089
-   - Consider mutual TLS authentication
-
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Write tests for new functionality
-4. Ensure all tests pass: `make test`
-5. Format code: `make fmt`
-6. Commit changes with clear messages
-7. Push to your fork and submit a pull request
-
-### Code Style
-
-- Follow Go conventions and idioms
-- Use `gofmt` for formatting
-- Write descriptive variable and function names
-- Add comments for exported functions
-- Keep functions focused and small
 
 ## License
 
