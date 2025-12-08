@@ -15,23 +15,25 @@ import (
 
 // MigrationNodeProcessor is a custom FlowGraph node processor for migration nodes
 type MigrationNodeProcessor struct {
-	config        *utils.Config
-	splunkService services.SplunkServiceInterface
-	dataInputs    []utils.DataInput
-	successCount  int
-	failedCount   int
-	failedInputs  []string
-	mu            sync.RWMutex
-	logger        utils.Logger
+	config           *utils.Config
+	splunkService    services.SplunkServiceInterface
+	dashboardService services.DashboardServiceInterface
+	dataInputs       []utils.DataInput
+	successCount     int
+	failedCount      int
+	failedInputs     []string
+	mu               sync.RWMutex
+	logger           utils.Logger
 }
 
 // NewMigrationNodeProcessor creates a new migration node processor
-func NewMigrationNodeProcessor(config *utils.Config, splunkService services.SplunkServiceInterface) *MigrationNodeProcessor {
+func NewMigrationNodeProcessor(config *utils.Config, splunkService services.SplunkServiceInterface, dashboardService services.DashboardServiceInterface) *MigrationNodeProcessor {
 	return &MigrationNodeProcessor{
-		config:        config,
-		splunkService: splunkService,
-		failedInputs:  make([]string, 0),
-		logger:        utils.GetLogger(),
+		config:           config,
+		splunkService:    splunkService,
+		dashboardService: dashboardService,
+		failedInputs:     make([]string, 0),
+		logger:           utils.GetLogger(),
 	}
 }
 
@@ -61,6 +63,8 @@ func (p *MigrationNodeProcessor) Process(ctx context.Context, node *flowgraph.No
 		err = p.createDataInputsNode(ctx)
 	case "verify_inputs":
 		err = p.verifyInputsNode(ctx)
+	case "create_dashboards":
+		err = p.createDashboardsNode(ctx)
 	default:
 		p.logger.Error("Unknown migration node", utils.String("node_id", node.ID))
 		return nil, fmt.Errorf("unknown migration node: %s", node.ID)
@@ -113,14 +117,38 @@ func (p *MigrationNodeProcessor) checkSalesforceAddonNode(ctx context.Context) e
 func (p *MigrationNodeProcessor) createIndexNode(ctx context.Context) error {
 	p.logger.Info("📊 Node 3: Creating Splunk index...")
 
-	if err := p.splunkService.CreateIndex(ctx, p.config.Splunk.IndexName); err != nil {
-		p.logger.Error("Failed to create index",
+	// Check if index already exists
+	exists, err := p.splunkService.CheckIndexExists(ctx, p.config.Splunk.IndexName)
+	if err != nil {
+		p.logger.Warn("Could not check if index exists, will attempt to create",
 			utils.String("index_name", p.config.Splunk.IndexName),
 			utils.Err(err))
-		return err
+		exists = false
 	}
 
-	p.logger.Info("✅ Index created", utils.String("index_name", p.config.Splunk.IndexName))
+	if exists {
+		// Index exists, update it
+		p.logger.Info("Index exists, updating...",
+			utils.String("index_name", p.config.Splunk.IndexName))
+
+		if err := p.splunkService.UpdateIndex(ctx, p.config.Splunk.IndexName); err != nil {
+			p.logger.Error("Failed to update index",
+				utils.String("index_name", p.config.Splunk.IndexName),
+				utils.Err(err))
+			return err
+		}
+		p.logger.Info("✅ Index updated successfully", utils.String("index_name", p.config.Splunk.IndexName))
+	} else {
+		// Index doesn't exist, create it
+		if err := p.splunkService.CreateIndex(ctx, p.config.Splunk.IndexName); err != nil {
+			p.logger.Error("Failed to create index",
+				utils.String("index_name", p.config.Splunk.IndexName),
+				utils.Err(err))
+			return err
+		}
+		p.logger.Info("✅ Index created successfully", utils.String("index_name", p.config.Splunk.IndexName))
+	}
+
 	return nil
 }
 
@@ -128,12 +156,34 @@ func (p *MigrationNodeProcessor) createIndexNode(ctx context.Context) error {
 func (p *MigrationNodeProcessor) createAccountNode(ctx context.Context) error {
 	p.logger.Info("🔗 Node 4: Creating Salesforce account in Splunk...")
 
-	if err := p.splunkService.CreateSalesforceAccount(ctx); err != nil {
-		p.logger.Error("Failed to create Salesforce account", utils.Err(err))
-		return err
+	// Check if account already exists
+	exists, err := p.splunkService.CheckSalesforceAccountExists(ctx)
+	if err != nil {
+		p.logger.Warn("Could not check if Salesforce account exists, will attempt to create",
+			utils.String("account", p.config.Salesforce.AccountName),
+			utils.Err(err))
+		exists = false
 	}
 
-	p.logger.Info("✅ Salesforce account created")
+	if exists {
+		// Account exists, update it
+		p.logger.Info("Salesforce account exists, updating...",
+			utils.String("account", p.config.Salesforce.AccountName))
+
+		if err := p.splunkService.UpdateSalesforceAccount(ctx); err != nil {
+			p.logger.Error("Failed to update Salesforce account", utils.Err(err))
+			return err
+		}
+		p.logger.Info("✅ Salesforce account updated successfully")
+	} else {
+		// Account doesn't exist, create it
+		if err := p.splunkService.CreateSalesforceAccount(ctx); err != nil {
+			p.logger.Error("Failed to create Salesforce account", utils.Err(err))
+			return err
+		}
+		p.logger.Info("✅ Salesforce account created successfully")
+	}
+
 	return nil
 }
 
@@ -176,17 +226,47 @@ func (p *MigrationNodeProcessor) createDataInputsNode(ctx context.Context) error
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
-			if err := p.splunkService.CreateDataInput(ctx, &inp); err != nil {
-				p.logger.Error("Failed to create data input",
+			// Check if data input already exists
+			exists, err := p.splunkService.CheckDataInputExists(ctx, inp.Name)
+			if err != nil {
+				p.logger.Warn("Could not check if data input exists, will attempt to create",
 					utils.String("name", inp.Name),
-					utils.String("object", inp.Object),
 					utils.Err(err))
-				p.incrementFailed(inp.Name)
-			} else {
-				p.logger.Info("Data input created successfully",
+				exists = false
+			}
+
+			if exists {
+				// Data input exists, update it
+				p.logger.Info("Data input exists, updating...",
 					utils.String("name", inp.Name),
 					utils.String("object", inp.Object))
-				p.incrementSuccess()
+
+				if err := p.splunkService.UpdateDataInput(ctx, &inp); err != nil {
+					p.logger.Error("Failed to update data input",
+						utils.String("name", inp.Name),
+						utils.String("object", inp.Object),
+						utils.Err(err))
+					p.incrementFailed(inp.Name)
+				} else {
+					p.logger.Info("Data input updated successfully",
+						utils.String("name", inp.Name),
+						utils.String("object", inp.Object))
+					p.incrementSuccess()
+				}
+			} else {
+				// Data input doesn't exist, create it
+				if err := p.splunkService.CreateDataInput(ctx, &inp); err != nil {
+					p.logger.Error("Failed to create data input",
+						utils.String("name", inp.Name),
+						utils.String("object", inp.Object),
+						utils.Err(err))
+					p.incrementFailed(inp.Name)
+				} else {
+					p.logger.Info("Data input created successfully",
+						utils.String("name", inp.Name),
+						utils.String("object", inp.Object))
+					p.incrementSuccess()
+				}
 			}
 		}(i, input)
 	}
@@ -243,6 +323,36 @@ func (p *MigrationNodeProcessor) verifyInputsNode(ctx context.Context) error {
 		p.logger.Warn("None of the configured data inputs were found in Splunk")
 	}
 
+	return nil
+}
+
+// createDashboardsNode creates dashboards from XML files
+func (p *MigrationNodeProcessor) createDashboardsNode(ctx context.Context) error {
+	dashboardDir := p.config.Migration.DashboardDirectory
+
+	p.logger.Info("📊 Node 8: Creating Splunk dashboards...",
+		utils.String("directory", dashboardDir))
+
+	if dashboardDir == "" {
+		p.logger.Warn("⚠️  Dashboard directory not configured. Skipping dashboard creation...")
+		return nil
+	}
+
+	// Check if directory exists
+	if exists, err := utils.FileExists(dashboardDir); err != nil || !exists {
+		p.logger.Warn("⚠️  Dashboard directory not found. Skipping dashboard creation...",
+			utils.String("directory", dashboardDir))
+		return nil
+	}
+
+	if err := p.dashboardService.CreateDashboardsFromDirectory(ctx, dashboardDir); err != nil {
+		p.logger.Error("Failed to create dashboards",
+			utils.String("directory", dashboardDir),
+			utils.Err(err))
+		return err
+	}
+
+	p.logger.Info("✅ Dashboards created successfully")
 	return nil
 }
 

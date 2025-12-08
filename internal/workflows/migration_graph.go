@@ -23,9 +23,9 @@ type MigrationGraph struct {
 }
 
 // NewMigrationGraph creates a new FlowGraph-based migration workflow
-func NewMigrationGraph(config *utils.Config, splunkService services.SplunkServiceInterface) (*MigrationGraph, error) {
+func NewMigrationGraph(config *utils.Config, splunkService services.SplunkServiceInterface, dashboardService services.DashboardServiceInterface) (*MigrationGraph, error) {
 	// Create custom node processor for migration nodes
-	processor := NewMigrationNodeProcessor(config, splunkService)
+	processor := NewMigrationNodeProcessor(config, splunkService, dashboardService)
 
 	// Create FlowGraph runtime with custom processor
 	runtime := flowgraph.NewRuntimeWithNodeProcessor(processor)
@@ -112,6 +112,13 @@ func buildMigrationGraph() (*flowgraph.Graph, error) {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
+		{
+			ID:        "create_dashboards",
+			Name:      "Create Dashboards",
+			Type:      flowgraph.NodeTypeFunction,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
 	}
 
 	// Add nodes to graph
@@ -129,6 +136,7 @@ func buildMigrationGraph() (*flowgraph.Graph, error) {
 		{Source: "create_account", Target: "load_data_inputs"},
 		{Source: "load_data_inputs", Target: "create_data_inputs"},
 		{Source: "create_data_inputs", Target: "verify_inputs"},
+		{Source: "verify_inputs", Target: "create_dashboards"},
 	}
 
 	// Add edges to graph

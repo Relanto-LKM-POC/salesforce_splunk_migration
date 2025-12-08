@@ -34,8 +34,14 @@ func Execute() error {
 		return fmt.Errorf("failed to create Splunk service: %w", err)
 	}
 
+	// Create Dashboard service (requires authenticated SplunkService)
+	dashboardService, err := services.NewDashboardService(config, splunkService)
+	if err != nil {
+		return fmt.Errorf("failed to create Dashboard service: %w", err)
+	}
+
 	// Create FlowGraph-based migration workflow
-	migrationGraph, err := workflows.NewMigrationGraph(config, splunkService)
+	migrationGraph, err := workflows.NewMigrationGraph(config, splunkService, dashboardService)
 	if err != nil {
 		return fmt.Errorf("failed to create migration graph: %w", err)
 	}

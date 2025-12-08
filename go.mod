@@ -9,6 +9,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.1
+	splunk-dashboards v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -17,6 +18,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.27.0 // indirect
+	github.com/go-resty/resty/v2 v2.15.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
@@ -32,3 +34,5 @@ require (
 )
 
 replace github.com/flowgraph/flowgraph => ./flowgraph
+
+replace splunk-dashboards => ./splunk-dashboards

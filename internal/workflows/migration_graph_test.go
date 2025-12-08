@@ -32,7 +32,9 @@ func TestNewMigrationGraph(t *testing.T) {
 
 		mockService := &mocks.MockSplunkService{}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 		require.NotNil(t, graph)
 	})
@@ -60,8 +62,9 @@ func TestNewMigrationGraph(t *testing.T) {
 		}
 
 		mockService := &mocks.MockSplunkService{}
+		mockDashboardService := &mocks.MockDashboardService{}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 		require.NotNil(t, graph)
 	})
@@ -80,8 +83,9 @@ func TestNewMigrationGraph(t *testing.T) {
 		}
 
 		mockService := &mocks.MockSplunkService{}
+		mockDashboardService := &mocks.MockDashboardService{}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 		require.NotNil(t, graph)
 	})
@@ -137,7 +141,9 @@ func TestMigrationGraph_Execute(t *testing.T) {
 			},
 		}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 
 		ctx := context.Background()
@@ -169,7 +175,9 @@ func TestMigrationGraph_Execute(t *testing.T) {
 			},
 		}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 
 		ctx := context.Background()
@@ -205,7 +213,9 @@ func TestMigrationGraph_Execute(t *testing.T) {
 			},
 		}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 
 		ctx := context.Background()
@@ -257,7 +267,9 @@ func TestMigrationGraph_Execute(t *testing.T) {
 			},
 		}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -290,7 +302,9 @@ func TestMigrationGraph_Execute(t *testing.T) {
 			},
 		}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 
 		ctx := context.Background()
@@ -318,7 +332,9 @@ func TestMigrationGraph_GetState(t *testing.T) {
 
 		mockService := &mocks.MockSplunkService{}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 
 		state := graph.GetState()
@@ -375,7 +391,9 @@ func TestMigrationGraph_GetState(t *testing.T) {
 			},
 		}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 
 		ctx := context.Background()
@@ -488,7 +506,9 @@ func TestMigrationGraph_ExecuteWithDataInputs(t *testing.T) {
 			},
 		}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 
 		ctx := context.Background()
@@ -530,7 +550,9 @@ func TestMigrationGraph_ExecuteWithDataInputs(t *testing.T) {
 			},
 		}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 
 		ctx := context.Background()
@@ -563,7 +585,9 @@ func TestMigrationGraph_BuildGraphErrors(t *testing.T) {
 
 		// NewMigrationGraph internally calls buildMigrationGraph
 		// If it returns successfully, buildMigrationGraph worked correctly
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 		require.NotNil(t, graph)
 	})
@@ -599,7 +623,9 @@ func TestMigrationGraph_ExecuteWithPanic(t *testing.T) {
 			},
 		}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 
 		ctx := context.Background()
@@ -663,7 +689,9 @@ func TestMigrationGraph_ExecuteWithNonCompletedStatus(t *testing.T) {
 			},
 		}
 
-		graph, err := workflows.NewMigrationGraph(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
 		require.NoError(t, err)
 
 		// Create a context that will be cancelled very quickly
@@ -675,5 +703,189 @@ func TestMigrationGraph_ExecuteWithNonCompletedStatus(t *testing.T) {
 		// Error may occur due to context cancellation, which is expected
 		// The test verifies that the code handles non-completed status gracefully
 		_ = err
+	})
+}
+
+func TestMigrationGraph_DashboardCreation(t *testing.T) {
+	t.Run("Success_WithDashboardDirectory", func(t *testing.T) {
+		config := &utils.Config{
+			Splunk: utils.SplunkConfig{
+				IndexName: "test_index",
+			},
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+			Migration: utils.MigrationConfig{
+				ConcurrentRequests: 3,
+				DashboardDirectory: "resources/dashboards",
+			},
+			Extensions: map[string]interface{}{
+				"DATA_INPUTS": []interface{}{
+					map[string]interface{}{
+						"name":          "test_input",
+						"object":        "Account",
+						"object_fields": "Id,Name",
+					},
+				},
+			},
+		}
+
+		mockService := &mocks.MockSplunkService{
+			AuthenticateFunc: func(ctx context.Context) error {
+				return nil
+			},
+			CheckSalesforceAddonFunc: func(ctx context.Context) error {
+				return nil
+			},
+			CreateIndexFunc: func(ctx context.Context, indexName string) error {
+				return nil
+			},
+			CreateSalesforceAccountFunc: func(ctx context.Context) error {
+				return nil
+			},
+			CreateDataInputFunc: func(ctx context.Context, input *utils.DataInput) error {
+				return nil
+			},
+			ListDataInputsFunc: func(ctx context.Context) ([]string, error) {
+				return []string{"test_input"}, nil
+			},
+		}
+
+		mockDashboardService := &mocks.MockDashboardService{
+			CreateDashboardsFromDirectoryFunc: func(ctx context.Context, dashboardDir string) error {
+				assert.Equal(t, "resources/dashboards", dashboardDir)
+				return nil
+			},
+		}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
+		require.NoError(t, err)
+
+		ctx := context.Background()
+		err = graph.Execute(ctx)
+
+		require.NoError(t, err)
+		assert.Equal(t, 1, mockDashboardService.CreateDashboardsFromDirectoryCalls)
+	})
+
+	t.Run("Success_NoDashboardDirectory", func(t *testing.T) {
+		config := &utils.Config{
+			Splunk: utils.SplunkConfig{
+				IndexName: "test_index",
+			},
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+			Migration: utils.MigrationConfig{
+				ConcurrentRequests: 3,
+				DashboardDirectory: "", // Empty directory
+			},
+			Extensions: map[string]interface{}{
+				"DATA_INPUTS": []interface{}{
+					map[string]interface{}{
+						"name":          "test_input",
+						"object":        "Account",
+						"object_fields": "Id,Name",
+					},
+				},
+			},
+		}
+
+		mockService := &mocks.MockSplunkService{
+			AuthenticateFunc: func(ctx context.Context) error {
+				return nil
+			},
+			CheckSalesforceAddonFunc: func(ctx context.Context) error {
+				return nil
+			},
+			CreateIndexFunc: func(ctx context.Context, indexName string) error {
+				return nil
+			},
+			CreateSalesforceAccountFunc: func(ctx context.Context) error {
+				return nil
+			},
+			CreateDataInputFunc: func(ctx context.Context, input *utils.DataInput) error {
+				return nil
+			},
+			ListDataInputsFunc: func(ctx context.Context) ([]string, error) {
+				return []string{"test_input"}, nil
+			},
+		}
+
+		mockDashboardService := &mocks.MockDashboardService{
+			CreateDashboardsFromDirectoryFunc: func(ctx context.Context, dashboardDir string) error {
+				return nil
+			},
+		}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
+		require.NoError(t, err)
+
+		ctx := context.Background()
+		err = graph.Execute(ctx)
+
+		require.NoError(t, err)
+		// Should not call dashboard creation when directory is empty
+		assert.Equal(t, 0, mockDashboardService.CreateDashboardsFromDirectoryCalls)
+	})
+
+	t.Run("Error_DashboardCreationFails", func(t *testing.T) {
+		config := &utils.Config{
+			Splunk: utils.SplunkConfig{
+				IndexName: "test_index",
+			},
+			Salesforce: utils.SalesforceConfig{
+				AccountName: "test_account",
+			},
+			Migration: utils.MigrationConfig{
+				ConcurrentRequests: 3,
+				DashboardDirectory: "resources/dashboards",
+			},
+			Extensions: map[string]interface{}{
+				"DATA_INPUTS": []interface{}{
+					map[string]interface{}{
+						"name":          "test_input",
+						"object":        "Account",
+						"object_fields": "Id,Name",
+					},
+				},
+			},
+		}
+
+		mockService := &mocks.MockSplunkService{
+			AuthenticateFunc: func(ctx context.Context) error {
+				return nil
+			},
+			CheckSalesforceAddonFunc: func(ctx context.Context) error {
+				return nil
+			},
+			CreateIndexFunc: func(ctx context.Context, indexName string) error {
+				return nil
+			},
+			CreateSalesforceAccountFunc: func(ctx context.Context) error {
+				return nil
+			},
+			CreateDataInputFunc: func(ctx context.Context, input *utils.DataInput) error {
+				return nil
+			},
+			ListDataInputsFunc: func(ctx context.Context) ([]string, error) {
+				return []string{"test_input"}, nil
+			},
+		}
+
+		mockDashboardService := &mocks.MockDashboardService{
+			CreateDashboardsFromDirectoryFunc: func(ctx context.Context, dashboardDir string) error {
+				return fmt.Errorf("dashboard creation failed")
+			},
+		}
+
+		graph, err := workflows.NewMigrationGraph(config, mockService, mockDashboardService)
+		require.NoError(t, err)
+
+		ctx := context.Background()
+		err = graph.Execute(ctx)
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "dashboard creation failed")
 	})
 }

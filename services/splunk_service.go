@@ -12,10 +12,17 @@ import (
 
 type SplunkServiceInterface interface {
 	Authenticate(ctx context.Context) error
+	GetAuthToken() string
 	CheckSalesforceAddon(ctx context.Context) error
 	CreateIndex(ctx context.Context, indexName string) error
+	CheckIndexExists(ctx context.Context, indexName string) (bool, error)
+	UpdateIndex(ctx context.Context, indexName string) error
 	CreateSalesforceAccount(ctx context.Context) error
+	CheckSalesforceAccountExists(ctx context.Context) (bool, error)
+	UpdateSalesforceAccount(ctx context.Context) error
 	CreateDataInput(ctx context.Context, input *utils.DataInput) error
+	UpdateDataInput(ctx context.Context, input *utils.DataInput) error
+	CheckDataInputExists(ctx context.Context, inputName string) (bool, error)
 	ListDataInputs(ctx context.Context) ([]string, error)
 }
 
@@ -89,6 +96,11 @@ func (s *SplunkService) Authenticate(ctx context.Context) error {
 	return nil
 }
 
+// GetAuthToken returns the authentication token
+func (s *SplunkService) GetAuthToken() string {
+	return s.authToken
+}
+
 // CheckSalesforceAddon checks if Splunk Add-on for Salesforce is installed
 func (s *SplunkService) CheckSalesforceAddon(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -151,6 +163,11 @@ func (s *SplunkService) CreateIndex(ctx context.Context, indexName string) error
 		"output_mode": "json",
 	}
 
+	// Add maxTotalDataSizeMB if configured
+	if s.config.Splunk.MaxTotalDataSizeMB > 0 {
+		formData["maxTotalDataSizeMB"] = fmt.Sprintf("%d", s.config.Splunk.MaxTotalDataSizeMB)
+	}
+
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
 	}
@@ -163,6 +180,64 @@ func (s *SplunkService) CreateIndex(ctx context.Context, indexName string) error
 	// The communication layer already handles 409 and 500 "already exists" responses
 	if !resp.IsSuccess() && resp.StatusCode != 409 && resp.StatusCode != 500 {
 		return fmt.Errorf("failed to create index: status %d - %s", resp.StatusCode, resp.String())
+	}
+
+	return s.checkResponseMessages(resp)
+}
+
+// CheckIndexExists checks if an index exists
+func (s *SplunkService) CheckIndexExists(ctx context.Context, indexName string) (bool, error) {
+	if indexName == "" {
+		return false, fmt.Errorf("index name cannot be empty")
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
+	}
+
+	url := fmt.Sprintf("/services/data/indexes/%s?output_mode=json", indexName)
+	resp, err := s.httpClient.Get(ctx, url, headers)
+	if err != nil {
+		return false, fmt.Errorf("failed to check index existence: %w", err)
+	}
+
+	return resp.StatusCode == 200, nil
+}
+
+// UpdateIndex updates an existing Splunk index
+func (s *SplunkService) UpdateIndex(ctx context.Context, indexName string) error {
+	if indexName == "" {
+		return fmt.Errorf("index name cannot be empty")
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	formData := map[string]string{
+		"output_mode": "json",
+	}
+
+	// Add maxTotalDataSizeMB if configured
+	if s.config.Splunk.MaxTotalDataSizeMB > 0 {
+		formData["maxTotalDataSizeMB"] = fmt.Sprintf("%d", s.config.Splunk.MaxTotalDataSizeMB)
+	}
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
+	}
+
+	// Update uses POST to the specific index endpoint
+	url := fmt.Sprintf("/services/data/indexes/%s", indexName)
+	resp, err := s.httpClient.PostForm(ctx, url, formData, headers)
+	if err != nil {
+		return fmt.Errorf("failed to update index: %w", err)
+	}
+
+	if !resp.IsSuccess() {
+		return fmt.Errorf("failed to update index: status %d - %s", resp.StatusCode, resp.String())
 	}
 
 	return s.checkResponseMessages(resp)
@@ -198,6 +273,58 @@ func (s *SplunkService) CreateSalesforceAccount(ctx context.Context) error {
 	// Just check if response is successful or handled
 	if !resp.IsSuccess() && resp.StatusCode != 409 && resp.StatusCode != 500 {
 		return fmt.Errorf("failed to create Salesforce account: status %d - %s", resp.StatusCode, resp.String())
+	}
+
+	return s.checkResponseMessages(resp)
+}
+
+// CheckSalesforceAccountExists checks if a Salesforce account exists
+func (s *SplunkService) CheckSalesforceAccountExists(ctx context.Context) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
+	}
+
+	url := fmt.Sprintf("/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_account/%s?output_mode=json", s.config.Salesforce.AccountName)
+	resp, err := s.httpClient.Get(ctx, url, headers)
+	if err != nil {
+		return false, fmt.Errorf("failed to check Salesforce account existence: %w", err)
+	}
+
+	return resp.StatusCode == 200, nil
+}
+
+// UpdateSalesforceAccount updates an existing Salesforce account in Splunk
+func (s *SplunkService) UpdateSalesforceAccount(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	formData := map[string]string{
+		"endpoint":         s.config.Salesforce.Endpoint,
+		"sfdc_api_version": s.config.Salesforce.APIVersion,
+		"auth_type":        s.config.Salesforce.AuthType,
+		"output_mode":      "json",
+	}
+
+	// Add OAuth client credentials
+	formData["client_id_oauth_credentials"] = s.config.Salesforce.ClientID
+	formData["client_secret_oauth_credentials"] = s.config.Salesforce.ClientSecret
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
+	}
+
+	// Update uses POST to the specific account endpoint
+	url := fmt.Sprintf("/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_account/%s", s.config.Salesforce.AccountName)
+	resp, err := s.httpClient.PostForm(ctx, url, formData, headers)
+	if err != nil {
+		return fmt.Errorf("failed to update Salesforce account: %w", err)
+	}
+
+	if !resp.IsSuccess() {
+		return fmt.Errorf("failed to update Salesforce account: status %d - %s", resp.StatusCode, resp.String())
 	}
 
 	return s.checkResponseMessages(resp)
@@ -242,6 +369,68 @@ func (s *SplunkService) CreateDataInput(ctx context.Context, input *utils.DataIn
 	// The communication layer already handles 409 and 500 "already exists" responses
 	if !resp.IsSuccess() && resp.StatusCode != 409 && resp.StatusCode != 500 {
 		return fmt.Errorf("failed to create data input: status %d - %s", resp.StatusCode, resp.String())
+	}
+
+	return s.checkResponseMessages(resp)
+}
+
+// CheckDataInputExists checks if a data input exists
+func (s *SplunkService) CheckDataInputExists(ctx context.Context, inputName string) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
+	}
+
+	url := fmt.Sprintf("/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object/%s?output_mode=json", inputName)
+	resp, err := s.httpClient.Get(ctx, url, headers)
+	if err != nil {
+		return false, fmt.Errorf("failed to check data input existence: %w", err)
+	}
+
+	return resp.StatusCode == 200, nil
+}
+
+// UpdateDataInput updates an existing Salesforce object data input in Splunk
+func (s *SplunkService) UpdateDataInput(ctx context.Context, input *utils.DataInput) error {
+	if input == nil {
+		return fmt.Errorf("data input cannot be nil")
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	formData := map[string]string{
+		"account":       s.config.Salesforce.AccountName,
+		"object":        input.Object,
+		"object_fields": input.ObjectFields,
+		"order_by":      input.OrderBy,
+		"start_date":    input.StartDate,
+		"interval":      fmt.Sprintf("%d", input.Interval),
+		"delay":         fmt.Sprintf("%d", input.Delay),
+		"index":         input.Index,
+		"output_mode":   "json",
+	}
+
+	// Use default index if not specified
+	if formData["index"] == "" {
+		formData["index"] = s.config.Splunk.DefaultIndex
+	}
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Splunk %s", s.authToken),
+	}
+
+	// Update uses POST to the specific input endpoint
+	url := fmt.Sprintf("/servicesNS/-/Splunk_TA_salesforce/Splunk_TA_salesforce_sfdc_object/%s", input.Name)
+	resp, err := s.httpClient.PostForm(ctx, url, formData, headers)
+	if err != nil {
+		return fmt.Errorf("failed to update data input: %w", err)
+	}
+
+	if !resp.IsSuccess() {
+		return fmt.Errorf("failed to update data input: status %d - %s", resp.StatusCode, resp.String())
 	}
 
 	return s.checkResponseMessages(resp)

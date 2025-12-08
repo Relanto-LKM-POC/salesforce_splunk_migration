@@ -22,15 +22,16 @@ type Config struct {
 
 // SplunkConfig holds Splunk-specific configuration
 type SplunkConfig struct {
-	URL            string `env:"SPLUNK_URL"`
-	Username       string `env:"SPLUNK_USERNAME"`
-	Password       string `env:"SPLUNK_PASSWORD"`
-	SkipSSLVerify  bool   `env:"SPLUNK_SKIP_SSL_VERIFY"`
-	DefaultIndex   string `env:"SPLUNK_DEFAULT_INDEX"`
-	IndexName      string `env:"SPLUNK_INDEX_NAME"`
-	RequestTimeout int    `env:"SPLUNK_REQUEST_TIMEOUT"`
-	MaxRetries     int    `env:"SPLUNK_MAX_RETRIES"`
-	RetryDelay     int    `env:"SPLUNK_RETRY_DELAY"`
+	URL                string `env:"SPLUNK_URL"`
+	Username           string `env:"SPLUNK_USERNAME"`
+	Password           string `env:"SPLUNK_PASSWORD"`
+	SkipSSLVerify      bool   `env:"SPLUNK_SKIP_SSL_VERIFY"`
+	DefaultIndex       string `env:"SPLUNK_DEFAULT_INDEX"`
+	IndexName          string `env:"SPLUNK_INDEX_NAME"`
+	MaxTotalDataSizeMB int    `env:"SPLUNK_MAX_TOTAL_DATA_SIZE_MB"`
+	RequestTimeout     int    `env:"SPLUNK_REQUEST_TIMEOUT"`
+	MaxRetries         int    `env:"SPLUNK_MAX_RETRIES"`
+	RetryDelay         int    `env:"SPLUNK_RETRY_DELAY"`
 }
 
 // SalesforceConfig holds Salesforce-specific configuration

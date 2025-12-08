@@ -37,7 +37,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 		node := &flowgraph.Node{
 			ID:   "authenticate",
 			Name: "Authenticate with Splunk",
@@ -59,7 +60,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 		node := &flowgraph.Node{ID: "authenticate"}
 
 		output, err := processor.Process(context.Background(), node, make(map[string]interface{}))
@@ -77,7 +79,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 		node := &flowgraph.Node{
 			ID:   "check_salesforce_addon",
 			Name: "Check Salesforce Addon",
@@ -99,7 +102,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 		node := &flowgraph.Node{ID: "check_salesforce_addon"}
 
 		output, err := processor.Process(context.Background(), node, make(map[string]interface{}))
@@ -117,7 +121,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 		node := &flowgraph.Node{
 			ID:   "create_index",
 			Name: "Create Index",
@@ -139,7 +144,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 		node := &flowgraph.Node{ID: "create_index"}
 
 		output, err := processor.Process(context.Background(), node, make(map[string]interface{}))
@@ -157,7 +163,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 		node := &flowgraph.Node{
 			ID:   "create_account",
 			Name: "Create Salesforce Account",
@@ -179,7 +186,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 		node := &flowgraph.Node{ID: "create_account"}
 
 		output, err := processor.Process(context.Background(), node, make(map[string]interface{}))
@@ -209,7 +217,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(configWithInputs, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(configWithInputs, mockService, mockDashboardService)
 		node := &flowgraph.Node{
 			ID:   "load_data_inputs",
 			Name: "Load Data Inputs",
@@ -237,7 +246,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 			Extensions: map[string]interface{}{},
 		}
-		processor := workflows.NewMigrationNodeProcessor(configNoInputs, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(configNoInputs, mockService, mockDashboardService)
 		node := &flowgraph.Node{ID: "load_data_inputs"}
 
 		_, err := processor.Process(context.Background(), node, make(map[string]interface{}))
@@ -269,7 +279,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(configWithInputs, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(configWithInputs, mockService, mockDashboardService)
 		// Need to load inputs first
 		loadNode := &flowgraph.Node{ID: "load_data_inputs"}
 		_, _ = processor.Process(context.Background(), loadNode, make(map[string]interface{}))
@@ -290,7 +301,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 
 	t.Run("Success_CreateDataInputs_NoInputs", func(t *testing.T) {
 		mockService := &mocks.MockSplunkService{}
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 		node := &flowgraph.Node{ID: "create_data_inputs"}
 
 		output, err := processor.Process(context.Background(), node, make(map[string]interface{}))
@@ -323,7 +335,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(configWithInputs, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(configWithInputs, mockService, mockDashboardService)
 		// Load inputs first
 		loadNode := &flowgraph.Node{ID: "load_data_inputs"}
 		_, _ = processor.Process(context.Background(), loadNode, make(map[string]interface{}))
@@ -361,7 +374,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(configWithInputs, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(configWithInputs, mockService, mockDashboardService)
 		// Load inputs first
 		loadInputsNode := &flowgraph.Node{ID: "load_data_inputs"}
 		_, _ = processor.Process(context.Background(), loadInputsNode, make(map[string]interface{}))
@@ -403,7 +417,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(configWithInputs, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(configWithInputs, mockService, mockDashboardService)
 		// Load inputs first
 		loadInputsNode2 := &flowgraph.Node{ID: "load_data_inputs"}
 		_, _ = processor.Process(context.Background(), loadInputsNode2, make(map[string]interface{}))
@@ -419,7 +434,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 
 	t.Run("Error_UnknownNode", func(t *testing.T) {
 		mockService := &mocks.MockSplunkService{}
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 		node := &flowgraph.Node{ID: "unknown_node"}
 
 		output, err := processor.Process(context.Background(), node, make(map[string]interface{}))
@@ -435,7 +451,8 @@ func TestMigrationNodeProcessor_Process(t *testing.T) {
 				return nil
 			},
 		}
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 		node := &flowgraph.Node{ID: "authenticate"}
 
 		input := map[string]interface{}{
@@ -459,7 +476,8 @@ func TestNewMigrationNodeProcessor(t *testing.T) {
 			},
 		}
 
-		processor := workflows.NewMigrationNodeProcessor(config, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, mockService, mockDashboardService)
 
 		require.NotNil(t, processor)
 	})
@@ -467,7 +485,8 @@ func TestNewMigrationNodeProcessor(t *testing.T) {
 	t.Run("Success_NilConfig", func(t *testing.T) {
 		mockService := &mocks.MockSplunkService{}
 
-		processor := workflows.NewMigrationNodeProcessor(nil, mockService)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(nil, mockService, mockDashboardService)
 
 		require.NotNil(t, processor)
 	})
@@ -475,8 +494,10 @@ func TestNewMigrationNodeProcessor(t *testing.T) {
 	t.Run("Success_NilService", func(t *testing.T) {
 		config := &utils.Config{}
 
-		processor := workflows.NewMigrationNodeProcessor(config, nil)
+		mockDashboardService := &mocks.MockDashboardService{}
+		processor := workflows.NewMigrationNodeProcessor(config, nil, mockDashboardService)
 
 		require.NotNil(t, processor)
 	})
 }
+
