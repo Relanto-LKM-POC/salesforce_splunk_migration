@@ -230,32 +230,3 @@ func TestMessage(t *testing.T) {
 		assert.True(t, len(message.Text) > 50)
 	})
 }
-
-func TestAuthResponse(t *testing.T) {
-	t.Run("Success_ValidAuthResponse", func(t *testing.T) {
-		authResponse := AuthResponse{
-			SessionKey: "abcdef123456789",
-		}
-
-		assert.Equal(t, "abcdef123456789", authResponse.SessionKey)
-		assert.NotEmpty(t, authResponse.SessionKey)
-	})
-
-	t.Run("Success_EmptySessionKey", func(t *testing.T) {
-		authResponse := AuthResponse{
-			SessionKey: "",
-		}
-
-		assert.Empty(t, authResponse.SessionKey)
-	})
-
-	t.Run("Success_LongSessionKey", func(t *testing.T) {
-		longKey := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"
-		authResponse := AuthResponse{
-			SessionKey: longKey,
-		}
-
-		assert.Equal(t, longKey, authResponse.SessionKey)
-		assert.True(t, len(authResponse.SessionKey) > 50)
-	})
-}

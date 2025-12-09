@@ -4,342 +4,893 @@
     <description>Dashboard through code</description>
     <definition><![CDATA[
 {
-    "title": "Analytics Automated Dashboard",
+    "title": "Preview of Salesforce Analytics Dashboard",
     "description": "",
     "inputs": {
-        "input_9RDskAyp": {
+        "input_U8oai3Tc": {
             "options": {
-                "defaultValue": "-24h@h,now",
-                "token": "tr_6Wa3jQuc"
+                "defaultValue": "*",
+                "items": [
+                    {
+                        "label": "All",
+                        "value": "*"
+                    },
+                    {
+                        "label": "Wael",
+                        "value": "Wael"
+                    },
+                    {
+                        "label": "David",
+                        "value": "David"
+                    }
+                ],
+                "token": "Executive_Sponsor"
             },
-            "title": "Time Range Input Title",
-            "type": "input.timerange"
+            "title": "Executive Sponsor",
+            "type": "input.dropdown"
+        },
+        "input_Xl4pWYkQ": {
+            "options": {
+                "defaultValue": "*",
+                "items": [
+                    {
+                        "label": "All",
+                        "value": "*"
+                    },
+                    {
+                        "label": "Ashish",
+                        "value": "Ashish"
+                    },
+                    {
+                        "label": "Joseph",
+                        "value": "Joseph"
+                    },
+                    {
+                        "label": "Raja",
+                        "value": "Raja"
+                    },
+                    {
+                        "label": "Ranjeev",
+                        "value": "Ranjeev"
+                    },
+                    {
+                        "label": "Ravi",
+                        "value": "Ravi"
+                    }
+                ],
+                "token": "Application_Owner"
+            },
+            "title": "Application Owner",
+            "type": "input.dropdown"
+        },
+        "input_pAWK10mX": {
+            "options": {
+                "defaultValue": "*",
+                "items": [
+                    {
+                        "label": "All",
+                        "value": "*"
+                    },
+                    {
+                        "label": "Learner",
+                        "value": "Learner"
+                    },
+                    {
+                        "label": "Partner",
+                        "value": "Partner"
+                    },
+                    {
+                        "label": "Customer",
+                        "value": "Customer"
+                    },
+                    {
+                        "label": "Developer",
+                        "value": "Developer"
+                    },
+                    {
+                        "label": "Internal Stakeholder",
+                        "value": "Internal Stakeholder"
+                    }
+                ],
+                "token": "Value_Stream"
+            },
+            "title": "Value Stream",
+            "type": "input.dropdown"
         }
     },
     "defaults": {
         "dataSources": {
             "ds.search": {
                 "options": {
-                    "queryParameters": {}
+                    "queryParameters": {
+                        "earliest": "0",
+                        "latest": "now"
+                    }
                 }
+            }
+        },
+        "visualizations": {
+            "global": {
+                "showProgressBar": true
             }
         }
     },
     "visualizations": {
-        "viz_7PYIEnbq": {
+        "viz_6E4jIyC4": {
             "dataSources": {
-                "primary": "ds_QbkNB5j3"
+                "primary": "ds_h6fKx6EL"
             },
             "options": {
-                "dataValuesDisplay": "all",
+                "dataValuesDisplay": "off",
                 "legendDisplay": "right",
+                "legendMode": "standard",
                 "legendTruncation": "ellipsisMiddle",
-                "showIndependentYRanges": false,
-                "showRoundedY2AxisLabels": false,
-                "showSplitSeries": false,
-                "showY2MajorGridLines": true,
-                "stackMode": "auto",
-                "xAxisTitleVisibility": "show",
-                "y2AxisAbbreviation": "auto",
-                "y2AxisTitleVisibility": "show",
-                "yAxisAbbreviation": "auto",
-                "yAxisScale": "linear",
-                "yAxisTitleVisibility": "show"
-            },
-            "title": "Response Codes Distribution",
-            "type": "splunk.bar"
-        },
-        "viz_Ak7ARi41": {
-            "context": {
-                "convertedColorRange": [
-                    {
-                        "from": 0,
-                        "value": "#1182f3"
-                    },
-                    {
-                        "to": 0,
-                        "value": "#118832"
-                    }
-                ]
-            },
-            "dataSources": {
-                "primary": "ds_625My9rB"
-            },
-            "options": {
-                "backgroundColor": "#000000",
-                "majorColor": "#0877a6",
-                "numberPrecision": 0,
-                "shouldUseThousandSeparators": true,
-                "sparklineDisplay": "below",
-                "trendColor": "#000000",
-                "trendDisplay": "absolute",
-                "unitPosition": "after"
-            },
-            "title": "Number of API Hits",
-            "type": "splunk.singlevalue"
-        },
-        "viz_HGaJrw3n": {
-            "context": {
-                "convertedColorRange": [
-                    {
-                        "from": 100,
-                        "value": "#dc4e41"
-                    },
-                    {
-                        "from": 70,
-                        "to": 100,
-                        "value": "#f1813f"
-                    },
-                    {
-                        "from": 30,
-                        "to": 70,
-                        "value": "#f8be34"
-                    },
-                    {
-                        "from": 0,
-                        "to": 30,
-                        "value": "#0877a6"
-                    },
-                    {
-                        "to": 0,
-                        "value": "#53a051"
-                    }
-                ]
-            },
-            "dataSources": {
-                "primary": "ds_FI9KNP05"
-            },
-            "options": {
-                "majorColor": "#ffffff",
-                "majorValue": "> sparklineValues | lastPoint()",
-                "numberPrecision": 0,
-                "shouldUseThousandSeparators": true,
-                "sparklineDisplay": "below",
-                "sparklineValues": "> primary | seriesByName('uri')",
-                "trendDisplay": "absolute",
-                "trendValue": "> sparklineValues | delta(-2)",
-                "unitPosition": "after"
-            },
-            "title": "Most Active Endpoint",
-            "type": "splunk.singlevalue"
-        },
-        "viz_SZPwW2Wu": {
-            "dataSources": {
-                "primary": "ds_LMEnqskf"
-            },
-            "options": {
-                "collapseThreshold": 0.01,
+                "lineWidth": 5,
+                "nullValueDisplay": "gaps",
                 "seriesColors": [
-                    "#4BB543",
-                    "#ff0000"
-                ]
-            },
-            "title": "Login Success VS. Failure",
-            "type": "splunk.pie"
-        },
-        "viz_bRLUYyk4": {
-            "dataSources": {
-                "primary": "ds_22lly3ul"
-            },
-            "options": {
-                "dataValuesDisplay": "all",
-                "legendDisplay": "right",
-                "legendTruncation": "ellipsisMiddle",
+                    "#009CEB",
+                    "#00CDAF",
+                    "#DD9900",
+                    "#FF677B",
+                    "#CB2196",
+                    "#813193",
+                    "#0051B5",
+                    "#008C80",
+                    "#99B100",
+                    "#FFA476",
+                    "#FF6ACE",
+                    "#AE8CFF",
+                    "#00689D",
+                    "#00490A",
+                    "#465D00",
+                    "#9D6300",
+                    "#F6540B",
+                    "#FF969E",
+                    "#E47BFE"
+                ],
                 "showIndependentYRanges": false,
                 "showOverlayY2Axis": false,
                 "showRoundedY2AxisLabels": false,
                 "showSplitSeries": false,
                 "showY2MajorGridLines": true,
+                "xAxisLabelRotation": 90,
+                "xAxisTitleVisibility": "show",
+                "y2AxisAbbreviation": "auto",
+                "y2AxisScale": "linear",
+                "y2AxisTitleVisibility": "show",
+                "yAxisAbbreviation": "auto",
+                "yAxisMax": 1,
+                "yAxisMin": 0,
+                "yAxisScale": "linear",
+                "yAxisTitleVisibility": "show"
+            },
+            "title": "Average Threat Index (Monthly)",
+            "type": "splunk.line"
+        },
+        "viz_7LPZw6h3": {
+            "context": {
+                "convertedColorRange": [
+                    {
+                        "from": 0,
+                        "value": "#167FE3"
+                    },
+                    {
+                        "to": 0,
+                        "value": "#167FE3"
+                    }
+                ]
+            },
+            "dataSources": {
+                "primary": "ds_6Dd0BHIJ"
+            },
+            "options": {
+                "majorColor": "> majorValue | rangeValue(convertedColorRange)",
+                "numberPrecision": 0,
+                "shouldUseThousandSeparators": true,
+                "sparklineDisplay": "below",
+                "trendDisplay": "absolute",
+                "unitPosition": "after"
+            },
+            "title": "Code Repositories",
+            "type": "splunk.singlevalue"
+        },
+        "viz_9EFMLxYN": {
+            "dataSources": {
+                "primary": "ds_mY4mZOTH"
+            },
+            "options": {
+                "gaugeRanges": [
+                    {
+                        "to": 40,
+                        "value": "#118832"
+                    },
+                    {
+                        "from": 40,
+                        "to": 70,
+                        "value": "#cba700"
+                    },
+                    {
+                        "from": 70,
+                        "value": "#d41f1f"
+                    }
+                ],
+                "isGaugeOn": true,
+                "majorValue": "> primary | seriesByIndex(0) | lastPoint()",
+                "maxValue": 100,
+                "minValue": 0,
+                "numberPrecision": 2,
+                "trendValue": "> primary | seriesByIndex(0) | delta(-2)"
+            },
+            "title": "Cisco Secure Development Lifecycle Adoption",
+            "type": "splunk.singlevalueradial"
+        },
+        "viz_BTdsk9nv": {
+            "dataSources": {
+                "primary": "ds_uLAMkYoa"
+            },
+            "options": {
+                "collapseThreshold": 0.01
+            },
+            "title": "Vulnerabilities in Continuous Application Vulnerability Assessment",
+            "type": "splunk.pie"
+        },
+        "viz_FXsmoDRV": {
+            "dataSources": {
+                "primary": "ds_QEPIJ2Z2"
+            },
+            "options": {
+                "collapseThreshold": 0.01,
+                "legendDisplay": "right",
+                "legendTruncation": "ellipsisMiddle",
+                "showDonutHole": true
+            },
+            "title": "Total Vulnerabilities",
+            "type": "splunk.pie"
+        },
+        "viz_Gb5pReFB": {
+            "context": {
+                "convertedColorRange": [
+                    {
+                        "from": 0,
+                        "value": "#167FE3"
+                    },
+                    {
+                        "to": 0,
+                        "value": "#167FE3"
+                    }
+                ]
+            },
+            "dataSources": {
+                "primary": "ds_SjRS3M74"
+            },
+            "options": {
+                "majorColor": "> majorValue | rangeValue(convertedColorRange)",
+                "numberPrecision": 0,
+                "shouldUseThousandSeparators": true,
+                "sparklineDisplay": "below",
+                "trendDisplay": "absolute",
+                "unitPosition": "after"
+            },
+            "title": "Apps",
+            "type": "splunk.singlevalue"
+        },
+        "viz_K9fxvGea": {
+            "dataSources": {
+                "primary": "ds_uWo2jeie"
+            },
+            "options": {
+                "dataValuesDisplay": "all",
+                "legendDisplay": "right",
+                "legendTruncation": "ellipsisMiddle",
+                "seriesColors": [
+                    "#167FE3",
+                    "#009CEB",
+                    "#00CDAF",
+                    "#DD9900",
+                    "#FF677B",
+                    "#CB2196",
+                    "#813193",
+                    "#0051B5",
+                    "#008C80",
+                    "#99B100",
+                    "#FFA476",
+                    "#FF6ACE",
+                    "#AE8CFF",
+                    "#00689D",
+                    "#00490A",
+                    "#465D00",
+                    "#9D6300",
+                    "#F6540B",
+                    "#FF969E",
+                    "#E47BFE"
+                ],
+                "showIndependentYRanges": false,
+                "showOverlayY2Axis": false,
+                "showRoundedY2AxisLabels": false,
+                "showSplitSeries": false,
+                "showY2MajorGridLines": true,
+                "stackMode": "auto",
                 "xAxisLabelRotation": 0,
                 "xAxisTitleVisibility": "show",
                 "y2AxisAbbreviation": "auto",
+                "y2AxisScale": "linear",
                 "y2AxisTitleVisibility": "show",
                 "yAxisAbbreviation": "auto",
                 "yAxisScale": "linear",
                 "yAxisTitleVisibility": "show"
             },
-            "title": "Average Response Time by URI",
+            "title": "App Details By Value Stream",
             "type": "splunk.column"
         },
-        "viz_jhpUjFXH": {
-            "containerOptions": {
-                "visibility": {}
-            },
+        "viz_LGJWGUVl": {
             "dataSources": {
-                "fieldsummary": "ds_rJatSCFz",
-                "primary": "ds_0n62BVVL"
+                "primary": "ds_5u77x7AB"
             },
             "options": {
-                "backgroundColor": "> themes.defaultBackgroundColor",
-                "columnFormat": {
-                    "Time": {
-                        "width": 152
-                    }
-                },
-                "tableFormat": {
-                    "rowBackgroundColors": "> table | seriesByIndex(0) | pick(tableRowBackgroundColorsByTheme)"
-                }
+                "collapseThreshold": 0.01
+            },
+            "title": "Vulnerabilities in PSIRT",
+            "type": "splunk.pie"
+        },
+        "viz_OAc7s6ZV": {
+            "dataSources": {
+                "primary": "ds_6KZdM7uS"
+            },
+            "options": {
+                "collapseThreshold": 0.01
+            },
+            "title": "Vulnerabilities in Third Party",
+            "type": "splunk.pie"
+        },
+        "viz_VUVlkFVs": {
+            "containerOptions": {},
+            "dataSources": {
+                "primary": "ds_3ZHTdfnl"
+            },
+            "options": {
+                "showDonutHole": true
             },
             "showLastUpdated": false,
-            "showProgressBar": false,
-            "title": "Latest API hits",
-            "type": "splunk.table"
+            "showProgressBar": true,
+            "title": "Severities of Total Vulnerabilities",
+            "type": "splunk.pie"
+        },
+        "viz_XmCivIBa": {
+            "context": {
+                "convertedColorRange": [
+                    {
+                        "from": 0,
+                        "value": "#167FE3"
+                    },
+                    {
+                        "to": 0,
+                        "value": "#167FE3"
+                    }
+                ]
+            },
+            "dataSources": {
+                "primary": "ds_Xf8YCxAs"
+            },
+            "options": {
+                "majorColor": "> majorValue | rangeValue(convertedColorRange)",
+                "numberPrecision": 0,
+                "shouldUseThousandSeparators": true,
+                "sparklineDisplay": "below",
+                "trendDisplay": "absolute",
+                "unitPosition": "after"
+            },
+            "title": "Incidents in Secret Scans",
+            "type": "splunk.singlevalue"
+        },
+        "viz_amRxAT17": {
+            "dataSources": {
+                "primary": "ds_iW3RAQKL"
+            },
+            "options": {
+                "collapseThreshold": 0.01
+            },
+            "title": "Vulnerabilities in Dynamic Application Security Testing",
+            "type": "splunk.pie"
+        },
+        "viz_dkE4xlrG": {
+            "dataSources": {
+                "primary": "ds_Fs6sBUZt"
+            },
+            "options": {
+                "collapseThreshold": 0.01
+            },
+            "title": "Vulnerabilities in Siona",
+            "type": "splunk.pie"
+        },
+        "viz_ecPeHTCK": {
+            "dataSources": {
+                "primary": "ds_FKOn83yJ"
+            },
+            "options": {
+                "gaugeRanges": [
+                    {
+                        "to": 0.2,
+                        "value": "#118832"
+                    },
+                    {
+                        "from": 0.2,
+                        "to": 0.6,
+                        "value": "#cba700"
+                    },
+                    {
+                        "from": 0.6,
+                        "value": "#d41f1f"
+                    }
+                ],
+                "isGaugeOn": true,
+                "majorValue": "> primary | seriesByIndex(0) | lastPoint()",
+                "maxValue": 1,
+                "minValue": 0,
+                "numberPrecision": 2,
+                "trendValue": "> primary | seriesByIndex(0) | delta(-2)"
+            },
+            "title": "Application Comprehensive Vulnerability Threat Index (CVTI)",
+            "type": "splunk.singlevalueradial"
+        },
+        "viz_jurCNvbU": {
+            "context": {
+                "convertedColorRange": [
+                    {
+                        "from": 0,
+                        "value": "#167FE3"
+                    },
+                    {
+                        "to": 0,
+                        "value": "#167FE3"
+                    }
+                ]
+            },
+            "dataSources": {
+                "primary": "ds_zWr5S0cD"
+            },
+            "options": {
+                "majorColor": "> majorValue | rangeValue(convertedColorRange)",
+                "numberPrecision": 0,
+                "shouldUseThousandSeparators": true,
+                "sparklineDisplay": "below",
+                "trendDisplay": "absolute",
+                "unitPosition": "after"
+            },
+            "title": "Open Security Exceptions",
+            "type": "splunk.singlevalue"
+        },
+        "viz_l5EAmv9a": {
+            "dataSources": {
+                "primary": "ds_azkWBrzj"
+            },
+            "options": {
+                "collapseThreshold": 0.01
+            },
+            "title": "Vulnerabilities in Static Application Security Testing",
+            "type": "splunk.pie"
+        },
+        "viz_ogRGQUH9": {
+            "dataSources": {
+                "primary": "ds_h8Byovsb"
+            },
+            "options": {
+                "gaugeRanges": [
+                    {
+                        "to": 0.2,
+                        "value": "#118832"
+                    },
+                    {
+                        "from": 0.2,
+                        "to": 0.6,
+                        "value": "#cba700"
+                    },
+                    {
+                        "from": 0.6,
+                        "value": "#d41f1f"
+                    }
+                ],
+                "isGaugeOn": true,
+                "majorValue": "> primary | seriesByIndex(0) | lastPoint()",
+                "maxValue": 1,
+                "minValue": 0,
+                "numberPrecision": 2,
+                "trendValue": "> primary | seriesByIndex(0) | delta(-2)"
+            },
+            "title": "Application Threat Index",
+            "type": "splunk.singlevalueradial"
         }
     },
     "dataSources": {
-        "ds_0n62BVVL": {
-            "name": "Search_1",
+        "ds_3ZHTdfnl": {
+            "name": "Severities of Total Vulnerabilities search",
             "options": {
-                "query": "index=\"user_management_api_dev\" \r\n| head 10\r\n| eval Time=strftime(_time, \"%A, %B %e, %Y %I:%M %p\") \r\n| fields Time, level, message, uri, method, response_code, response_time, error, user_id, token_issued, user_agent\r\n| fields - \"_raw\" \"_time\" \"_sourcetype\" \"_cd\" \"_bkt\" \"_index\" \"_serial\" \"_indextime\" \"user_agent\" \"_si\"\r\n",
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:scans_aggregate__c\"\r\n| spath\r\n| spath path=Name output=Severity\r\n| spath path=Id output=ScanId\r\n| spath path=Total_Count__c output=TotalCount\r\n| spath path=Type__c output=ScanType\r\n| spath path=Application_Lifecycle__c output=ApplicationLifecycle\r\n| spath path=Application_Name__r.Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Application_Name__r.Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| spath path=Application_Name__r.Value_Stream__c output=ValueStream\r\n| where ScanType IN (\"Application Scan (DAST)\",\"Source Code Scan (SAST)\",\"Infrastructure Scan (CAVA)\",\"PSIRT\",\"Compliance-Gaps\",\"Third Party Vulnerabilities\",\"Secrets\") \r\n  AND Severity IN (\"Critical\",\"High\",\"Medium\",\"Low\")\r\n| eval ApplicationLifecycle=if(isnull(ApplicationLifecycle) OR ApplicationLifecycle=\"\",\"Unknown\",ApplicationLifecycle)\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| dedup ScanId\r\n| stats sum(TotalCount) as Findings by Severity\r\n| sort Severity",
                 "queryParameters": {
-                    "earliest": "$tr_6Wa3jQuc.earliest$",
-                    "latest": "$tr_6Wa3jQuc.latest$"
+                    "earliest": "0",
+                    "sampleRatio": 1
                 }
             },
             "type": "ds.search"
         },
-        "ds_22lly3ul": {
-            "name": "Average Response Time by uri - Column chart search",
+        "ds_5u77x7AB": {
+            "name": "Vulnerabilities in PSIRT search",
             "options": {
-                "query": "index=\"user_management_api_dev\"\n| stats avg(response_time) as avg_response_time by uri",
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:scans_aggregate__c\"\n| spath\n| spath path=Name output=Severity\n| spath path=Id output=ScanId\n| spath path=Total_Count__c output=TotalCount\n| spath path=Type__c output=ScanType\n| spath path=Application_Name__r.Application_Lifecycle__c output=ApplicationLifecycle\n| spath path=Application_Name__r.Transient_Application_Owner__r.Name output=ApplicationOwner\n| spath path=Application_Name__r.Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\n| spath path=Application_Name__r.Value_Stream__c output=ValueStream\n| where ScanType IN (\"PSIRT\") \n  AND Severity IN (\"Critical\",\"High\",\"Medium\",\"Low\")\n| where ApplicationLifecycle != \"EOL\"\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\n| dedup ScanId\n| stats sum(TotalCount) as Findings by Severity\n| sort Severity",
                 "queryParameters": {
-                    "earliest": "$tr_6Wa3jQuc.earliest$",
-                    "latest": "$tr_6Wa3jQuc.latest$"
+                    "earliest": "0",
+                    "sampleRatio": 1
                 }
             },
             "type": "ds.search"
         },
-        "ds_4EyuQBNz": {
-            "name": "Real-Time Api Hits 1 search",
+        "ds_6Dd0BHIJ": {
+            "name": "Code Repositories search",
             "options": {
-                "query": "index=\"user_management_api_dev\"\n| head 6",
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:app__c\"\r\n| spath path=Id output=AppId\r\n| spath path=CX_Repos__c output=RepoCount\r\n| spath path=Application_Lifecycle__c output=ApplicationLifecycle\r\n| spath path=Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| spath path=Value_Stream__c output=ValueStream\r\n| where ApplicationLifecycle != \"EOL\"\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| dedup AppId sortby -_time\r\n| stats sum(RepoCount) as TotalRepos, count(AppId) as UniqueApps",
                 "queryParameters": {
-                    "earliest": "0"
+                    "earliest": "0",
+                    "sampleRatio": 1
                 }
             },
             "type": "ds.search"
         },
-        "ds_625My9rB": {
-            "name": "Number of API Hits - Single value search",
+        "ds_6KZdM7uS": {
+            "name": "Vulnerabilities in Third Party search",
             "options": {
-                "query": "index=\"user_management_api_dev\"\r\n| stats count as API_Hits",
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:scans_aggregate__c\"\n| spath\n| spath path=Name output=Severity\n| spath path=Id output=ScanId\n| spath path=Total_Count__c output=TotalCount\n| spath path=Type__c output=ScanType\n| spath path=Application_Name__r.Application_Lifecycle__c output=ApplicationLifecycle\n| spath path=Application_Name__r.Transient_Application_Owner__r.Name output=ApplicationOwner\n| spath path=Application_Name__r.Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\n| spath path=Application_Name__r.Value_Stream__c output=ValueStream\n| where ScanType IN (\"Third Party Vulnerabilities\") \n  AND Severity IN (\"Critical\",\"High\",\"Medium\",\"Low\")\n| where ApplicationLifecycle != \"EOL\"\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\n| dedup ScanId\n| stats sum(TotalCount) as Findings by Severity\n| sort Severity",
                 "queryParameters": {
-                    "earliest": "$tr_6Wa3jQuc.earliest$",
-                    "latest": "$tr_6Wa3jQuc.latest$"
+                    "earliest": "0",
+                    "sampleRatio": 1
                 }
             },
             "type": "ds.search"
         },
-        "ds_FI9KNP05": {
-            "name": "Most Active Endpoint - Single value search",
+        "ds_7iQh23Sg": {
+            "name": "Application Comprehensive Vulnerability Threat Index _CVTI_ search",
             "options": {
-                "query": "index=\"user_management_api_dev\" method=* uri=* \n| stats count by uri \n| sort -count \n| head 2",
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:app__c\"\r\n| spath\r\n| rename Application_Lifecycle__c as ApplicationLifecycle, Application_CVTI_Threat_Index__c as ThreatIndex, Name as AppName\r\n| where ApplicationLifecycle != \"EOL\"\r\n| dedup Id sortby -_time\r\n| eval ThreatIndex=coalesce(ThreatIndex, 0)\r\n| where isnotnull(ThreatIndex)\r\n| stats avg(ThreatIndex) as AvgThreatIndex\r\n| eval AvgThreatIndex = round(AvgThreatIndex, 2)",
                 "queryParameters": {
-                    "earliest": "$tr_6Wa3jQuc.earliest$",
-                    "latest": "$tr_6Wa3jQuc.latest$"
+                    "earliest": "0",
+                    "sampleRatio": 1
                 }
             },
             "type": "ds.search"
         },
-        "ds_LMEnqskf": {
-            "name": "Login Success VS. Failure - Pie chart search",
+        "ds_FKOn83yJ": {
+            "name": "Application Threat Index search copy 1",
             "options": {
-                "query": "index=\"user_management_api_dev\" uri=\"/users/login\"\r\n| eval login_status=if(response_code=200, \"Success\", \"Failure\")\r\n| stats count by login_status\r\n| eval login_status=if(login_status==\"Success\", \"A_Success\", \"B_Failure\")\r\n| sort login_status\r\n| eval login_status=replace(login_status, \"A_\", \"\")\r\n| eval login_status=replace(login_status, \"B_\", \"\")",
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:app__c\"\r\n| spath\r\n| spath path=Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| rename Application_Lifecycle__c as ApplicationLifecycle, Application_CVTI_Threat_Index__c as ThreatIndex, Value_Stream__c as ValueStream\r\n| where ApplicationLifecycle != \"EOL\"\r\n| dedup Id sortby -_time\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| where isnotnull(ThreatIndex) AND ThreatIndex != \"\"\r\n| stats avg(ThreatIndex) as value\r\n| eval value = round(value, 2)",
                 "queryParameters": {
-                    "earliest": "$tr_6Wa3jQuc.earliest$",
-                    "latest": "$tr_6Wa3jQuc.latest$"
+                    "earliest": "0",
+                    "sampleRatio": 1
                 }
             },
             "type": "ds.search"
         },
-        "ds_QbkNB5j3": {
-            "name": "Response Codes Distribution - Bar chart search",
+        "ds_Fs6sBUZt": {
+            "name": "Vulnerabilities in Siona search",
             "options": {
-                "query": "index=\"user_management_api_dev\"\n| stats count by response_code",
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:scans_aggregate__c\"\n| spath\n| spath path=Name output=Severity\n| spath path=Id output=ScanId\n| spath path=Total_Count__c output=TotalCount\n| spath path=Type__c output=ScanType\n| spath path=Application_Name__r.Application_Lifecycle__c output=ApplicationLifecycle\n| spath path=Application_Name__r.Transient_Application_Owner__r.Name output=ApplicationOwner\n| spath path=Application_Name__r.Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\n| spath path=Application_Name__r.Value_Stream__c output=ValueStream\n| where ScanType IN (\"Siona\") \n  AND Severity IN (\"Critical\",\"High\",\"Medium\",\"Low\")\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\n| dedup ScanId\n| stats sum(TotalCount) as Findings by Severity\n| sort Severity",
                 "queryParameters": {
-                    "earliest": "$tr_6Wa3jQuc.earliest$",
-                    "latest": "$tr_6Wa3jQuc.latest$"
+                    "earliest": "0",
+                    "sampleRatio": 1
                 }
             },
             "type": "ds.search"
         },
-        "ds_rJatSCFz": {
-            "name": "Real-Time Api Hits 2 search",
+        "ds_QEPIJ2Z2": {
+            "name": "Total Vulnerabilities search",
             "options": {
-                "extend": "ds_4EyuQBNz",
-                "query": "| fieldsummary maxvals=10"
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:vulnerabilities_aggregate__c\"\r\n| spath\r\n| spath path=Name output=VulnName\r\n| spath path=Id output=VulnId\r\n| spath path=Total__c output=TotalCount\r\n| spath path=Application_Name__r.Application_Lifecycle__c output=ApplicationLifecycle\r\n| spath path=Application_Name__r.Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Application_Name__r.Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| spath path=Application_Name__r.Value_Stream__c output=ValueStream\r\n| where VulnName IN (\"Application Code\", \"Infra Code\", \"PSIRT\", \"Third Party Vulnerabilities\")\r\n| where ApplicationLifecycle != \"EOL\"\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| dedup VulnId\r\n| stats sum(TotalCount) as TotalVulnerabilities by VulnName\r\n| sort VulnName",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
             },
-            "type": "ds.chain"
+            "type": "ds.search"
+        },
+        "ds_SjRS3M74": {
+            "name": "Apps search",
+            "options": {
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:app__c\"\r\n| spath\r\n| spath path=Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| spath path=Value_Stream__c output=ValueStream\r\n| rename Application_Lifecycle__c as ApplicationLifecycle\r\n| where ApplicationLifecycle != \"EOL\"\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| stats earliest(_time) as first_seen by Id\r\n| stats count(Id) as TotalApps",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_Xf8YCxAs": {
+            "name": "Incidents in Secret Scans search",
+            "options": {
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:scans_aggregate__c\"\r\n| spath\r\n| spath path=Name output=Severity\r\n| spath path=Id output=ScanId\r\n| spath path=Total_Count__c output=TotalCount\r\n| spath path=Type__c output=ScanType\r\n| spath path=Application_Lifecycle__c output=ApplicationLifecycle\r\n| spath path=Application_Name__r.Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Application_Name__r.Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| spath path=Application_Name__r.Value_Stream__c output=ValueStream\r\n| where ScanType IN (\"Secrets\") \r\n  AND Severity IN (\"Critical\",\"High\",\"Medium\",\"Low\")\r\n| eval ApplicationLifecycle=if(isnull(ApplicationLifecycle) OR ApplicationLifecycle=\"\",\"Unknown\",ApplicationLifecycle)\r\n| where ApplicationLifecycle != \"EOL\"\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| dedup ScanId\r\n| stats sum(TotalCount) as TotalSecrets",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_azkWBrzj": {
+            "name": "Vulnerabilities in Static Application Security Testing search",
+            "options": {
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:scans_aggregate__c\"\n| spath\n| spath path=Name output=Severity\n| spath path=Id output=ScanId\n| spath path=Total_Count__c output=TotalCount\n| spath path=Type__c output=ScanType\n| spath path=Application_Name__r.Application_Lifecycle__c output=ApplicationLifecycle\n| spath path=Application_Name__r.Transient_Application_Owner__r.Name output=ApplicationOwner\n| spath path=Application_Name__r.Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\n| spath path=Application_Name__r.Value_Stream__c output=ValueStream\n| where ScanType IN (\"Source Code Scan (SAST)\") \n  AND Severity IN (\"Critical\",\"High\",\"Medium\",\"Low\")\n| where ApplicationLifecycle != \"EOL\"\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\n| dedup ScanId\n| stats sum(TotalCount) as Findings by Severity\n| sort Severity",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_h6fKx6EL": {
+            "name": "Average Threat Index _Monthly_ search1",
+            "options": {
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:threat_index_trending__c\"\r\n| spath\r\n| spath path=App__r.Application_Lifecycle__c output=ApplicationLifecycle\r\n| spath path=App__r.Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=App__r.Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| spath path=App__r.Value_Stream__c output=ValueStream\r\n| rename Threat_Index__c as ThreatIndex, Last_Threat_Index_date__c as ThreatIndexDate\r\n| dedup Id sortby -_time\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| where isnotnull(ThreatIndex) AND ThreatIndex != \"\"\r\n| eval ThreatIndexDate = strftime(strptime(ThreatIndexDate, \"%Y-%m-%d\"), \"%Y-%m\")\r\n| stats avg(ThreatIndex) as MonthlyAvgThreatIndex by ThreatIndexDate\r\n| eval MonthlyAvgThreatIndex = round(MonthlyAvgThreatIndex, 2)\r\n| sort ThreatIndexDate",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_h8Byovsb": {
+            "name": "Application Threat Index search",
+            "options": {
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:app__c\"\r\n| spath\r\n| spath path=Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| rename Application_Lifecycle__c as ApplicationLifecycle, Application_Threat_Index__c as ThreatIndex, Value_Stream__c as ValueStream\r\n| where ApplicationLifecycle != \"EOL\"\r\n| dedup Id sortby -_time\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| where isnotnull(ThreatIndex) AND ThreatIndex != \"\"\r\n| stats avg(ThreatIndex) as value\r\n| eval value = round(value, 2)",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_iW3RAQKL": {
+            "name": "Vulnerabilities in Dynamic Application Security Testing search",
+            "options": {
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:scans_aggregate__c\"\r\n| spath\r\n| spath path=Name output=Severity\r\n| spath path=Id output=ScanId\r\n| spath path=Total_Count__c output=TotalCount\r\n| spath path=Type__c output=ScanType\r\n| spath path=Application_Lifecycle__c output=ApplicationLifecycle\r\n| spath path=Application_Name__r.Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Application_Name__r.Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| spath path=Application_Name__r.Value_Stream__c output=ValueStream\r\n| where ScanType IN (\"Application Scan (DAST)\") \r\n  AND Severity IN (\"Critical\",\"High\",\"Medium\",\"Low\")\r\n| eval ApplicationLifecycle=if(isnull(ApplicationLifecycle) OR ApplicationLifecycle=\"\",\"Unknown\",ApplicationLifecycle)\r\n| where ApplicationLifecycle != \"EOL\"\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| dedup ScanId\r\n| stats sum(TotalCount) as Findings by Severity\r\n| sort Severity",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_mY4mZOTH": {
+            "name": "Cisco Secure Development Lifecycle Adoption search",
+            "options": {
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:app__c\"\r\n| spath\r\n| spath path=Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| rename Application_Lifecycle__c as ApplicationLifecycle, Application_Threat_Index__c as ThreatIndex, CSDL_Percentage__c as CSDLPercentage, Value_Stream__c as ValueStream\r\n| where ApplicationLifecycle != \"EOL\"\r\n| dedup Id sortby -_time\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| where isnotnull(CSDLPercentage) AND CSDLPercentage != \"\"\r\n| stats avg(CSDLPercentage) as value\r\n| eval value = round(value, 2)",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_q1FnWAqt": {
+            "name": "Average Threat Index _Monthly_ search",
+            "options": {
+                "query": "index=\"devsecops_hub_uat\"  sourcetype=\"sfdc:threat_index_trending__c\"\r\n| spath\r\n| rename Threat_Index__c as ThreatIndex, Last_Threat_Index_date__c as ThreatIndexDate\r\n| dedup Id sortby -_time\r\n| where isnotnull(ThreatIndex) AND ThreatIndex != \"\"\r\n| eval ThreatIndexDate = strftime(strptime(ThreatIndexDate, \"%Y-%m-%d\"), \"%Y-%m\")\r\n| stats avg(ThreatIndex) as MonthlyAvgThreatIndex by ThreatIndexDate\r\n| eval MonthlyAvgThreatIndex = round(MonthlyAvgThreatIndex, 2)\r\n| sort ThreatIndexDate",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_uLAMkYoa": {
+            "name": "Vulnerabilities in Continuous Application Vulnerability Assessment search",
+            "options": {
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:scans_aggregate__c\"\r\n| spath\r\n| spath path=Name output=Severity\r\n| spath path=Id output=ScanId\r\n| spath path=Total_Count__c output=TotalCount\r\n| spath path=Type__c output=ScanType\r\n| spath path=Application_Name__r.Application_Lifecycle__c output=ApplicationLifecycle\r\n| spath path=Application_Name__r.Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Application_Name__r.Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| spath path=Application_Name__r.Value_Stream__c output=ValueStream\r\n| where ScanType IN (\"Infrastructure Scan (CAVA)\") \r\n  AND Severity IN (\"Critical\",\"High\",\"Medium\",\"Low\")\r\n| where ApplicationLifecycle != \"EOL\"\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| dedup ScanId\r\n| stats sum(TotalCount) as Findings by Severity\r\n| sort Severity",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_uWo2jeie": {
+            "name": "App Details By Value Stream search",
+            "options": {
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:app__c\"\r\n| spath path=Id output=AppId\r\n| spath path=Value_Stream__c output=ValueStream\r\n| spath path=Application_Lifecycle__c output=ApplicationLifecycle\r\n| spath path=Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| where ApplicationLifecycle != \"EOL\"\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| dedup AppId sortby -_time\r\n| stats count(AppId) as AppCount by ValueStream\r\n| sort ValueStream",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
+            },
+            "type": "ds.search"
+        },
+        "ds_zWr5S0cD": {
+            "name": "Open Security Exceptions search",
+            "options": {
+                "query": "index=\"devsecops_hub_uat\" sourcetype=\"sfdc:app__c\"\r\n| spath path=Id output=AppId\r\n| spath path=Security_Exceptions_Pending__c output=ExceptionsPending\r\n| spath path=Application_Lifecycle__c output=Lifecycle\r\n| spath path=Transient_Application_Owner__r.Name output=ApplicationOwner\r\n| spath path=Transient_Executive_Sponsor__r.Name output=ExecutiveSponsor\r\n| spath path=Value_Stream__c output=ValueStream\r\n| where Lifecycle=\"Production\"\r\n| eval ApplicationOwner=if(isnull(ApplicationOwner),\"\",ApplicationOwner)\r\n| eval ExecutiveSponsor=if(isnull(ExecutiveSponsor),\"\",ExecutiveSponsor)\r\n| eval ValueStream=if(isnull(ValueStream),\"\",ValueStream)\r\n| where (ApplicationOwner=\"*\" OR ApplicationOwner LIKE \"$Application_Owner$\" OR \"$Application_Owner$\"=\"*\")\r\n| where (ExecutiveSponsor=\"*\" OR ExecutiveSponsor LIKE \"$Executive_Sponsor$\" OR \"$Executive_Sponsor$\"=\"*\")\r\n| where (ValueStream=\"*\" OR ValueStream LIKE \"$Value_Stream$\" OR \"$Value_Stream$\"=\"*\")\r\n| dedup AppId sortby -_time\r\n| stats sum(ExceptionsPending) as TotalSecurityExceptionsPending, count(AppId) as UniqueApps",
+                "queryParameters": {
+                    "earliest": "0",
+                    "sampleRatio": 1
+                }
+            },
+            "type": "ds.search"
         }
     },
     "layout": {
         "globalInputs": [
-            "input_9RDskAyp"
+            "input_U8oai3Tc",
+            "input_Xl4pWYkQ",
+            "input_pAWK10mX"
         ],
         "layoutDefinitions": {
             "layout_1": {
                 "options": {
-                    "height": 462,
+                    "height": 960,
                     "width": 1440
                 },
                 "structure": [
                     {
-                        "item": "viz_Ak7ARi41",
+                        "item": "viz_ogRGQUH9",
                         "position": {
-                            "h": 172,
-                            "w": 224,
+                            "h": 300,
+                            "w": 720,
                             "x": 0,
                             "y": 0
                         },
                         "type": "block"
                     },
                     {
-                        "item": "viz_SZPwW2Wu",
+                        "item": "viz_6E4jIyC4",
                         "position": {
-                            "h": 257,
-                            "w": 664,
-                            "x": 0,
-                            "y": 172
-                        },
-                        "type": "block"
-                    },
-                    {
-                        "item": "viz_bRLUYyk4",
-                        "position": {
-                            "h": 413,
+                            "h": 321,
                             "w": 1440,
                             "x": 0,
-                            "y": 429
+                            "y": 300
                         },
                         "type": "block"
                     },
                     {
-                        "item": "viz_jhpUjFXH",
+                        "item": "viz_ecPeHTCK",
                         "position": {
-                            "h": 353,
+                            "h": 294,
                             "w": 1440,
                             "x": 0,
-                            "y": 842
+                            "y": 621
                         },
                         "type": "block"
                     },
                     {
-                        "item": "viz_HGaJrw3n",
+                        "item": "viz_FXsmoDRV",
                         "position": {
-                            "h": 172,
-                            "w": 440,
-                            "x": 224,
+                            "h": 402,
+                            "w": 720,
+                            "x": 0,
+                            "y": 915
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_LGJWGUVl",
+                        "position": {
+                            "h": 368,
+                            "w": 512,
+                            "x": 0,
+                            "y": 1317
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_amRxAT17",
+                        "position": {
+                            "h": 342,
+                            "w": 512,
+                            "x": 0,
+                            "y": 1685
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_Gb5pReFB",
+                        "position": {
+                            "h": 302,
+                            "w": 512,
+                            "x": 0,
+                            "y": 2027
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_XmCivIBa",
+                        "position": {
+                            "h": 369,
+                            "w": 512,
+                            "x": 0,
+                            "y": 2329
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_OAc7s6ZV",
+                        "position": {
+                            "h": 368,
+                            "w": 473,
+                            "x": 512,
+                            "y": 1317
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_BTdsk9nv",
+                        "position": {
+                            "h": 342,
+                            "w": 473,
+                            "x": 512,
+                            "y": 1685
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_7LPZw6h3",
+                        "position": {
+                            "h": 302,
+                            "w": 473,
+                            "x": 512,
+                            "y": 2027
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_K9fxvGea",
+                        "position": {
+                            "h": 369,
+                            "w": 928,
+                            "x": 512,
+                            "y": 2329
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_VUVlkFVs",
+                        "position": {
+                            "h": 402,
+                            "w": 720,
+                            "x": 720,
+                            "y": 915
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_9EFMLxYN",
+                        "position": {
+                            "h": 300,
+                            "w": 720,
+                            "x": 720,
                             "y": 0
                         },
                         "type": "block"
                     },
                     {
-                        "item": "viz_7PYIEnbq",
+                        "item": "viz_l5EAmv9a",
                         "position": {
-                            "h": 429,
-                            "w": 776,
-                            "x": 664,
-                            "y": 0
+                            "h": 368,
+                            "w": 455,
+                            "x": 985,
+                            "y": 1317
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_dkE4xlrG",
+                        "position": {
+                            "h": 342,
+                            "w": 455,
+                            "x": 985,
+                            "y": 1685
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_jurCNvbU",
+                        "position": {
+                            "h": 302,
+                            "w": 455,
+                            "x": 985,
+                            "y": 2027
                         },
                         "type": "block"
                     }
@@ -347,20 +898,17 @@
                 "type": "grid"
             }
         },
+        "options": {},
         "tabs": {
             "items": [
                 {
-                    "label": "New tab",
+                    "label": "Home",
                     "layoutId": "layout_1"
                 }
             ]
         }
     },
-    "applicationProperties": {
-        "hideEdit": false,
-        "hideExport": false,
-        "hideOpenInSearch": false
-    }
+    "applicationProperties": {}
 }]]></definition>
     <meta type="hiddenElements"><![CDATA[{
     "hideEdit": false,

@@ -53,9 +53,11 @@ The application uses `credentials.json` for configuration. The file supports bot
 
 ```json
 {
-  "SPLUNK_URL": "https://your-splunk-instance:8089",
+  "SPLUNK_URL": "https://your-splunk-instance.com:8089",
   "SPLUNK_USERNAME": "admin",
   "SPLUNK_PASSWORD": "your-password",
+  "SPLUNK_TOKEN_NAME": "salesforce_automation",
+  "SPLUNK_TOKEN_AUDIENCE": "Automation",
   "SPLUNK_SKIP_SSL_VERIFY": true,
   "SPLUNK_INDEX_NAME": "salesforce",
   "SPLUNK_DEFAULT_INDEX": "salesforce",
@@ -93,6 +95,10 @@ The application uses `credentials.json` for configuration. The file supports bot
 
 **Splunk Settings:**
 - `SPLUNK_URL`: Splunk REST API endpoint (must include port 8089)
+- `SPLUNK_USERNAME`: Splunk username for authentication
+- `SPLUNK_PASSWORD`: Splunk password for authentication
+- `SPLUNK_TOKEN_NAME`: (Optional) Name for the JWT authentication token (defaults to username)
+- `SPLUNK_TOKEN_AUDIENCE`: (Optional) Token audience for authorization (defaults to "Automation")
 - `SPLUNK_SKIP_SSL_VERIFY`: Set to `true` for self-signed certificates
 - `SPLUNK_MAX_RETRIES`: Number of retry attempts for failed requests (default: 3)
 - `SPLUNK_RETRY_DELAY`: Initial delay between retries in seconds (default: 2)
@@ -300,14 +306,35 @@ salesforce_splunk_migration/
 The tool interacts with the following Splunk REST API endpoints:
 
 ### Authentication
+
+The application uses JWT token-based authentication via the `/services/authorization/tokens` endpoint, which provides long-lived tokens suitable for automation:
+
 ```
-POST /services/auth/login
+POST /services/authorization/tokens
+Authorization: Basic <base64(username:password)>
 Content-Type: application/x-www-form-urlencoded
 
-username=<username>&password=<password>&output_mode=json
+name=<token_name>&audience=<audience>&output_mode=json
 
-Response: { "sessionKey": "<token>" }
+Response: {
+  "entry": [{
+    "content": {
+      "id": "<token_id>",
+      "token": "eyJraWQiOi..."
+    }
+  }]
+}
 ```
+
+**Configuration Parameters:**
+- `SPLUNK_TOKEN_NAME` - Name for the authentication token (defaults to username if not provided)
+- `SPLUNK_TOKEN_AUDIENCE` - Token audience (defaults to "Automation" if not provided)
+
+**Benefits of Token-based Authentication:**
+- Long-lived tokens (configurable expiration, typically days to months)
+- Suitable for automation and API integrations
+- No session timeout issues
+- Can be revoked individually without affecting other tokens
 
 ### Check Add-on Installation
 ```

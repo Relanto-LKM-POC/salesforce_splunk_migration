@@ -9,18 +9,20 @@ import (
 
 // MockHTTPClient is a mock implementation of HTTPClientInterface
 type MockHTTPClient struct {
-	GetFunc      func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error)
-	PostFunc     func(ctx context.Context, path string, body interface{}, headers map[string]string) (*utils.HTTPResponse, error)
-	PostFormFunc func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error)
-	PutFunc      func(ctx context.Context, path string, body interface{}, headers map[string]string) (*utils.HTTPResponse, error)
-	DeleteFunc   func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error)
+	GetFunc                   func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error)
+	PostFunc                  func(ctx context.Context, path string, body interface{}, headers map[string]string) (*utils.HTTPResponse, error)
+	PostFormFunc              func(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*utils.HTTPResponse, error)
+	PostFormWithBasicAuthFunc func(ctx context.Context, path string, formData map[string]string, headers map[string]string, username, password string) (*utils.HTTPResponse, error)
+	PutFunc                   func(ctx context.Context, path string, body interface{}, headers map[string]string) (*utils.HTTPResponse, error)
+	DeleteFunc                func(ctx context.Context, path string, headers map[string]string) (*utils.HTTPResponse, error)
 
 	// Call tracking
-	GetCalls      int
-	PostCalls     int
-	PostFormCalls int
-	PutCalls      int
-	DeleteCalls   int
+	GetCalls                   int
+	PostCalls                  int
+	PostFormCalls              int
+	PostFormWithBasicAuthCalls int
+	PutCalls                   int
+	DeleteCalls                int
 }
 
 // Get mocks GET request
@@ -50,6 +52,15 @@ func (m *MockHTTPClient) PostForm(ctx context.Context, path string, formData map
 	return &utils.HTTPResponse{StatusCode: 200, Body: []byte("{}")}, nil
 }
 
+// PostFormWithBasicAuth mocks POST form request with Basic Auth
+func (m *MockHTTPClient) PostFormWithBasicAuth(ctx context.Context, path string, formData map[string]string, headers map[string]string, username, password string) (*utils.HTTPResponse, error) {
+	m.PostFormWithBasicAuthCalls++
+	if m.PostFormWithBasicAuthFunc != nil {
+		return m.PostFormWithBasicAuthFunc(ctx, path, formData, headers, username, password)
+	}
+	return &utils.HTTPResponse{StatusCode: 200, Body: []byte("{}")}, nil
+}
+
 // Put mocks PUT request
 func (m *MockHTTPClient) Put(ctx context.Context, path string, body interface{}, headers map[string]string) (*utils.HTTPResponse, error) {
 	m.PutCalls++
@@ -73,6 +84,7 @@ func (m *MockHTTPClient) Reset() {
 	m.GetCalls = 0
 	m.PostCalls = 0
 	m.PostFormCalls = 0
+	m.PostFormWithBasicAuthCalls = 0
 	m.PutCalls = 0
 	m.DeleteCalls = 0
 }

@@ -34,6 +34,26 @@ type Message struct {
 	Text string `json:"text"`
 }
 
-type AuthResponse struct {
-	SessionKey string `json:"sessionKey"`
+// TokenAuthResponse represents the response from /services/authorization/tokens
+type TokenAuthResponse struct {
+	Links     map[string]string `json:"links"`
+	Origin    string            `json:"origin"`
+	Updated   string            `json:"updated"`
+	Generator struct {
+		Build   string `json:"build"`
+		Version string `json:"version"`
+	} `json:"generator"`
+	Entry []struct {
+		Name    string            `json:"name"`
+		ID      string            `json:"id"`
+		Updated string            `json:"updated"`
+		Links   map[string]string `json:"links"`
+		Author  string            `json:"author"`
+		Content struct {
+			ID    string `json:"id"`
+			Token string `json:"token"`
+		} `json:"content"`
+	} `json:"entry"`
+	Paging   Paging    `json:"paging"`
+	Messages []Message `json:"messages"`
 }

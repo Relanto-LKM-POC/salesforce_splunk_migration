@@ -25,6 +25,8 @@ type SplunkConfig struct {
 	URL                string `env:"SPLUNK_URL"`
 	Username           string `env:"SPLUNK_USERNAME"`
 	Password           string `env:"SPLUNK_PASSWORD"`
+	TokenName          string `env:"SPLUNK_TOKEN_NAME"`     // Token name for /authorization/tokens endpoint
+	TokenAudience      string `env:"SPLUNK_TOKEN_AUDIENCE"` // Token audience (e.g., "Automation")
 	SkipSSLVerify      bool   `env:"SPLUNK_SKIP_SSL_VERIFY"`
 	DefaultIndex       string `env:"SPLUNK_DEFAULT_INDEX"`
 	IndexName          string `env:"SPLUNK_INDEX_NAME"`

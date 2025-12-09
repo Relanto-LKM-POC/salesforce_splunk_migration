@@ -19,6 +19,7 @@ type HTTPClientInterface interface {
 	Get(ctx context.Context, path string, headers map[string]string) (*HTTPResponse, error)
 	Post(ctx context.Context, path string, body interface{}, headers map[string]string) (*HTTPResponse, error)
 	PostForm(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*HTTPResponse, error)
+	PostFormWithBasicAuth(ctx context.Context, path string, formData map[string]string, headers map[string]string, username, password string) (*HTTPResponse, error)
 	Put(ctx context.Context, path string, body interface{}, headers map[string]string) (*HTTPResponse, error)
 	Delete(ctx context.Context, path string, headers map[string]string) (*HTTPResponse, error)
 }
@@ -131,6 +132,16 @@ func (hc *HTTPClient) Post(ctx context.Context, path string, body interface{}, h
 
 // PostForm performs a POST request with form-encoded body
 func (hc *HTTPClient) PostForm(ctx context.Context, path string, formData map[string]string, headers map[string]string) (*HTTPResponse, error) {
+	return hc.makeFormRequest(ctx, "POST", path, formData, headers)
+}
+
+// PostFormWithBasicAuth performs a POST request with form-encoded body and HTTP Basic Authentication
+func (hc *HTTPClient) PostFormWithBasicAuth(ctx context.Context, path string, formData map[string]string, headers map[string]string, username, password string) (*HTTPResponse, error) {
+	if headers == nil {
+		headers = make(map[string]string)
+	}
+	// Add Basic Auth header
+	headers["Authorization"] = "Basic " + basicAuth(username, password)
 	return hc.makeFormRequest(ctx, "POST", path, formData, headers)
 }
 
@@ -369,4 +380,59 @@ func pow(base, exp float64) float64 {
 		result *= base
 	}
 	return result
+}
+
+// basicAuth encodes username and password for HTTP Basic Authentication
+func basicAuth(username, password string) string {
+	auth := username + ":" + password
+	// Base64 encode using standard encoding
+	encoded := make([]byte, len(auth)*2)
+	n := encodeBase64([]byte(auth), encoded)
+	return string(encoded[:n])
+}
+
+// encodeBase64 performs base64 encoding without importing encoding/base64
+func encodeBase64(src, dst []byte) int {
+	const base64Table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+	si := 0
+	di := 0
+	n := (len(src) / 3) * 3
+
+	for si < n {
+		val := uint(src[si])<<16 | uint(src[si+1])<<8 | uint(src[si+2])
+
+		dst[di] = base64Table[val>>18&0x3F]
+		dst[di+1] = base64Table[val>>12&0x3F]
+		dst[di+2] = base64Table[val>>6&0x3F]
+		dst[di+3] = base64Table[val&0x3F]
+
+		si += 3
+		di += 4
+	}
+
+	remain := len(src) - si
+	if remain == 0 {
+		return di
+	}
+
+	val := uint(src[si]) << 16
+	if remain == 2 {
+		val |= uint(src[si+1]) << 8
+	}
+
+	dst[di] = base64Table[val>>18&0x3F]
+	dst[di+1] = base64Table[val>>12&0x3F]
+
+	if remain == 2 {
+		dst[di+2] = base64Table[val>>6&0x3F]
+		dst[di+3] = '='
+		di += 4
+	} else {
+		dst[di+2] = '='
+		dst[di+3] = '='
+		di += 4
+	}
+
+	return di
 }
