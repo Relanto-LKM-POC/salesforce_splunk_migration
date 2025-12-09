@@ -201,7 +201,8 @@ func (s *SplunkService) CreateIndex(ctx context.Context, indexName string) error
 		"Authorization": fmt.Sprintf("Bearer %s", s.authToken),
 	}
 
-	resp, err := s.httpClient.PostForm(ctx, "/services/data/indexes", formData, headers)
+	// Use 000-self-service app context to match UAT configuration
+	resp, err := s.httpClient.PostForm(ctx, "/servicesNS/nobody/000-self-service/data/indexes", formData, headers)
 	if err != nil {
 		return fmt.Errorf("failed to create index: %w", err)
 	}
@@ -517,8 +518,13 @@ func (s *SplunkService) checkResponseMessages(resp *utils.HTTPResponse) error {
 	if len(splunkResp.Messages) > 0 {
 		for _, msg := range splunkResp.Messages {
 			if msg.Type == "ERROR" {
-				// Don't treat "already exists" as error
-				return nil
+				// Don't treat "already exists" errors as failures
+				msgText := strings.ToLower(msg.Text)
+				if strings.Contains(msgText, "already exists") || strings.Contains(msgText, "name is already in use") {
+					return nil
+				}
+				// Return actual error for any other ERROR message
+				return fmt.Errorf("splunk API error: %s", msg.Text)
 			}
 		}
 	}

@@ -115,39 +115,28 @@ func (p *MigrationNodeProcessor) checkSalesforceAddonNode(ctx context.Context) e
 
 // createIndexNode handles index creation
 func (p *MigrationNodeProcessor) createIndexNode(ctx context.Context) error {
-	p.logger.Info("📊 Node 3: Creating Splunk index...")
+	p.logger.Info("📊 Node 3: Verifying Splunk index...")
 
-	// Check if index already exists
+	// BYPASSED: Index creation skipped for Splunk Cloud
+	// Splunk Cloud requires indexes to be created manually via UI or support ticket
+	// The REST API cannot create indexes on indexer clusters
+
+	// Check if index exists
 	exists, err := p.splunkService.CheckIndexExists(ctx, p.config.Splunk.IndexName)
 	if err != nil {
-		// Only log warning for actual errors (404 is handled gracefully by CheckIndexExists)
-		p.logger.Warn("Could not check if index exists, will attempt to create",
+		p.logger.Warn("Could not verify index exists",
 			utils.String("index_name", p.config.Splunk.IndexName),
 			utils.Err(err))
-		exists = false
+		// Continue anyway - index might exist but not be visible via this endpoint
 	}
 
 	if exists {
-		// Index exists, update it
-		p.logger.Info("Index exists, updating...",
-			utils.String("index_name", p.config.Splunk.IndexName))
-
-		if err := p.splunkService.UpdateIndex(ctx, p.config.Splunk.IndexName); err != nil {
-			p.logger.Error("Failed to update index",
-				utils.String("index_name", p.config.Splunk.IndexName),
-				utils.Err(err))
-			return err
-		}
-		p.logger.Info("✅ Index updated successfully", utils.String("index_name", p.config.Splunk.IndexName))
+		p.logger.Info("✅ Index verified successfully", utils.String("index_name", p.config.Splunk.IndexName))
 	} else {
-		// Index doesn't exist, create it
-		if err := p.splunkService.CreateIndex(ctx, p.config.Splunk.IndexName); err != nil {
-			p.logger.Error("Failed to create index",
-				utils.String("index_name", p.config.Splunk.IndexName),
-				utils.Err(err))
-			return err
-		}
-		p.logger.Info("✅ Index created successfully", utils.String("index_name", p.config.Splunk.IndexName))
+		p.logger.Warn("⚠️  Index not found - must be created manually via Splunk Web UI",
+			utils.String("index_name", p.config.Splunk.IndexName),
+			utils.String("action", "Create index at Settings → Indexes → New Index"))
+		// Don't fail - allow workflow to continue
 	}
 
 	return nil
