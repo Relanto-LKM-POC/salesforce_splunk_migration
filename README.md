@@ -566,17 +566,31 @@ Located in `internal/workflows/*_test.go`:
 
 ## Docker Support
 
-Build and run in a container:
+### Build Docker Image
 
 ```powershell
-# Build Docker image
-docker build -t salesforce-splunk-migration .
-
-# Run with mounted config
-docker run -v ${PWD}/credentials.json:/app/credentials.json salesforce-splunk-migration
+docker build -t salesforce-splunk-migration:latest .
 ```
 
-The included `Dockerfile` creates a minimal container with the compiled binary.
+### Run Docker Container
+
+```powershell
+docker run --rm salesforce-splunk-migration:latest
+```
+
+### Important: Docker Networking
+
+When running in Docker, **`localhost` refers to the container itself**, not your host machine. If Splunk is running on your host, update `credentials.json`:
+
+```json
+{
+  "SPLUNK_URL": "https://host.docker.internal:8089"
+}
+```
+
+The `host.docker.internal` hostname resolves to your host machine from inside Docker containers on Windows and Mac.
+
+The included `Dockerfile` creates a minimal Alpine-based container with the compiled binary running as non-root user `gouser` for security.
 
 ## License
 

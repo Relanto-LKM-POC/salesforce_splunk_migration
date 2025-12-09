@@ -4,11 +4,9 @@ RUN apk update && apk add --no-cache git build-base
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY . .
 
 RUN go mod download
-
-COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o salesforce-splunk-migration .
 
