@@ -1,4 +1,3 @@
-// Package workflows provides FlowGraph integration for migration
 package workflows
 
 import (
@@ -13,7 +12,6 @@ import (
 	"github.com/flowgraph/flowgraph/pkg/flowgraph"
 )
 
-// MigrationNodeProcessor is a custom FlowGraph node processor for migration nodes
 type MigrationNodeProcessor struct {
 	config           *utils.Config
 	splunkService    services.SplunkServiceInterface
@@ -26,7 +24,6 @@ type MigrationNodeProcessor struct {
 	logger           utils.Logger
 }
 
-// NewMigrationNodeProcessor creates a new migration node processor
 func NewMigrationNodeProcessor(config *utils.Config, splunkService services.SplunkServiceInterface, dashboardService services.DashboardServiceInterface) *MigrationNodeProcessor {
 	return &MigrationNodeProcessor{
 		config:           config,

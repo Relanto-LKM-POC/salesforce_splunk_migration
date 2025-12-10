@@ -11,42 +11,35 @@ import (
 	"salesforce-splunk-migration/utils"
 )
 
-// Execute runs the main migration workflow using FlowGraph orchestration
 func Execute() error {
 	logger := utils.GetLogger()
 
-	// Load configuration
 	config, err := utils.LoadConfig(os.Getenv("VAULT_PATH"))
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Validate configuration
 	if err := config.Validate(); err != nil {
 		return fmt.Errorf("configuration validation failed: %w", err)
 	}
 
 	logger.Info("✅ Configuration loaded and validated")
 
-	// Create Splunk service
 	splunkService, err := services.NewSplunkService(config)
 	if err != nil {
 		return fmt.Errorf("failed to create Splunk service: %w", err)
 	}
 
-	// Create Dashboard service (requires authenticated SplunkService)
 	dashboardService, err := services.NewDashboardService(config, splunkService)
 	if err != nil {
 		return fmt.Errorf("failed to create Dashboard service: %w", err)
 	}
 
-	// Create FlowGraph-based migration workflow
 	migrationGraph, err := workflows.NewMigrationGraph(config, splunkService, dashboardService)
 	if err != nil {
 		return fmt.Errorf("failed to create migration graph: %w", err)
 	}
 
-	// Execute the workflow with state management and timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 
@@ -54,7 +47,6 @@ func Execute() error {
 		return fmt.Errorf("migration workflow failed: %w", err)
 	}
 
-	// Get final state for reporting
 	state := migrationGraph.GetState()
 	success, failed := state.GetCounters()
 

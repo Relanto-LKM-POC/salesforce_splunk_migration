@@ -1,4 +1,3 @@
-// Package workflows defines FlowGraph-based migration workflows
 package workflows
 
 import (
@@ -12,7 +11,6 @@ import (
 	"github.com/flowgraph/flowgraph/pkg/flowgraph"
 )
 
-// MigrationGraph represents the complete migration workflow using FlowGraph
 type MigrationGraph struct {
 	runtime   *flowgraph.Runtime
 	graph     *flowgraph.Graph
@@ -22,7 +20,6 @@ type MigrationGraph struct {
 	logger    utils.Logger
 }
 
-// NewMigrationGraph creates a new FlowGraph-based migration workflow
 func NewMigrationGraph(config *utils.Config, splunkService services.SplunkServiceInterface, dashboardService services.DashboardServiceInterface) (*MigrationGraph, error) {
 	// Create custom node processor for migration nodes
 	processor := NewMigrationNodeProcessor(config, splunkService, dashboardService)
